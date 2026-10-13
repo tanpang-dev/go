@@ -440,6 +440,48 @@ var fpRegMaskMIPS64 = ssaop.RegMask{V1: 1152921504338411520, V2: 0}
 var specialRegMaskMIPS64 = ssaop.RegMask{V1: 0, V2: 0}
 var framepointerRegMIPS64 = int8(-1)
 var linkRegMIPS64 = int8(27)
+var registersPPC = [...]ssabase.Register{
+	{Num: 0, ObjNum: ppc64.REG_R0, Name: "R0"},
+	{Num: 1, ObjNum: ppc64.REGSP, Name: "SP"},
+	{Num: 2, ObjNum: 0, Name: "SB"},
+	{Num: 3, ObjNum: ppc64.REG_R3, Name: "R3"},
+	{Num: 4, ObjNum: ppc64.REG_R4, Name: "R4"},
+	{Num: 5, ObjNum: ppc64.REG_R5, Name: "R5"},
+	{Num: 6, ObjNum: ppc64.REG_R6, Name: "R6"},
+	{Num: 7, ObjNum: ppc64.REG_R7, Name: "R7"},
+	{Num: 8, ObjNum: ppc64.REG_R8, Name: "R8"},
+	{Num: 9, ObjNum: ppc64.REG_R9, Name: "R9"},
+	{Num: 10, ObjNum: ppc64.REG_R10, Name: "R10"},
+	{Num: 11, ObjNum: ppc64.REG_R11, Name: "R11"},
+	{Num: 12, ObjNum: ppc64.REG_R12, Name: "R12"},
+	{Num: 13, ObjNum: ppc64.REG_R13, Name: "R13"},
+	{Num: 14, ObjNum: ppc64.REG_R14, Name: "R14"},
+	{Num: 15, ObjNum: ppc64.REG_R15, Name: "R15"},
+	{Num: 16, ObjNum: ppc64.REG_R16, Name: "R16"},
+	{Num: 17, ObjNum: ppc64.REG_R17, Name: "R17"},
+	{Num: 18, ObjNum: ppc64.REG_R18, Name: "R18"},
+	{Num: 19, ObjNum: ppc64.REG_R19, Name: "R19"},
+	{Num: 20, ObjNum: ppc64.REG_R20, Name: "R20"},
+	{Num: 21, ObjNum: ppc64.REG_R21, Name: "R21"},
+	{Num: 22, ObjNum: ppc64.REG_R22, Name: "R22"},
+	{Num: 23, ObjNum: ppc64.REG_R23, Name: "R23"},
+	{Num: 24, ObjNum: ppc64.REG_R24, Name: "R24"},
+	{Num: 25, ObjNum: ppc64.REG_R25, Name: "R25"},
+	{Num: 26, ObjNum: ppc64.REG_R26, Name: "R26"},
+	{Num: 27, ObjNum: ppc64.REG_R27, Name: "R27"},
+	{Num: 28, ObjNum: ppc64.REG_R28, Name: "R28"},
+	{Num: 29, ObjNum: ppc64.REG_R29, Name: "R29"},
+	{Num: 30, ObjNum: ppc64.REGG, Name: "g"},
+	{Num: 31, ObjNum: ppc64.REG_R31, Name: "R31"},
+	{Num: 32, ObjNum: ppc64.REG_F0, Name: "F0"},
+}
+var paramIntRegPPC = []int8(nil)
+var paramFloatRegPPC = []int8(nil)
+var gpRegMaskPPC = ssaop.RegMask{V1: 1073733624, V2: 0}
+var fpRegMaskPPC = ssaop.RegMask{V1: 0, V2: 0}
+var specialRegMaskPPC = ssaop.RegMask{V1: 0, V2: 0}
+var framepointerRegPPC = int8(-1)
+var linkRegPPC = int8(-1)
 var registersPPC64 = [...]ssabase.Register{
 	{Num: 0, ObjNum: ppc64.REG_R0, Name: "R0"},
 	{Num: 1, ObjNum: ppc64.REGSP, Name: "SP"},

@@ -627,8 +627,8 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 		p.From.Sym.Set(obj.AttrNoFrame, true)
 		textstksiz = 0
 	}
-	if textstksiz%8 != 0 {
-		c.ctxt.Diag("frame size %d not a multiple of 8", textstksiz)
+	if frameAlign := int64(c.ctxt.Arch.RegSize); textstksiz%frameAlign != 0 {
+		c.ctxt.Diag("frame size %d not a multiple of %d", textstksiz, frameAlign)
 	}
 	if p.From.Sym.NoFrame() {
 		if textstksiz != 0 {

@@ -117,6 +117,14 @@ const (
 	BlockMIPS64FPF
 	BlockMIPS64JUMPTABLE
 
+	BlockPPCEQ
+	BlockPPCNE
+	BlockPPCLTZ
+	BlockPPCLEZ
+	BlockPPCGTZ
+	BlockPPCGEZ
+	BlockPPCJUMPTABLE
+
 	BlockPPC64EQ
 	BlockPPC64NE
 	BlockPPC64LT
@@ -276,6 +284,14 @@ var blockString = [...]string{
 	BlockMIPS64FPT:       "FPT",
 	BlockMIPS64FPF:       "FPF",
 	BlockMIPS64JUMPTABLE: "JUMPTABLE",
+
+	BlockPPCEQ:        "EQ",
+	BlockPPCNE:        "NE",
+	BlockPPCLTZ:       "LTZ",
+	BlockPPCLEZ:       "LEZ",
+	BlockPPCGTZ:       "GTZ",
+	BlockPPCGEZ:       "GEZ",
+	BlockPPCJUMPTABLE: "JUMPTABLE",
 
 	BlockPPC64EQ:  "EQ",
 	BlockPPC64NE:  "NE",

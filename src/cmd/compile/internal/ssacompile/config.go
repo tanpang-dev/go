@@ -21,6 +21,7 @@ import (
 	"cmd/compile/internal/ssa/rewrite/mips"
 	"cmd/compile/internal/ssa/rewrite/mips64"
 	"cmd/compile/internal/ssa/rewrite/mips64latelower"
+	"cmd/compile/internal/ssa/rewrite/ppc"
 	"cmd/compile/internal/ssa/rewrite/ppc64"
 	"cmd/compile/internal/ssa/rewrite/ppc64latelower"
 	"cmd/compile/internal/ssa/rewrite/riscv64"
@@ -210,6 +211,18 @@ func newConfig(arch string, types ssa.Types, ctxt *obj.Link, optimize, softfloat
 		c.FPReg = framepointerRegMIPS
 		c.LinkReg = linkRegMIPS
 		c.HasGReg = true
+	case "ppc":
+		c.PtrSize = 4
+		c.RegSize = 4
+		c.LowerBlock = ppc.RewriteBlock
+		c.LowerValue = ppc.RewriteValue
+		c.Registers = registersPPC[:]
+		c.GpRegMask = gpRegMaskPPC
+		c.FpRegMask = fpRegMaskPPC
+		c.FPReg = framepointerRegPPC
+		c.LinkReg = linkRegPPC
+		c.HasGReg = true
+		c.BigEndian = true
 	case "riscv64":
 		c.PtrSize = 8
 		c.RegSize = 8
