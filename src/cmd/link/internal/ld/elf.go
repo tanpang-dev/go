@@ -206,7 +206,7 @@ func Elfinit(ctxt *Link) {
 		ehdr.Shentsize = ELF64SHDRSIZE // Must be ELF64SHDRSIZE
 
 	// 32-bit architectures
-	case sys.ARM, sys.MIPS:
+	case sys.ARM, sys.MIPS, sys.PPC:
 		if ctxt.Arch.Family == sys.ARM {
 			// we use EABI on linux/arm, freebsd/arm, netbsd/arm.
 			if ctxt.HeadType == objabi.Hlinux || ctxt.HeadType == objabi.Hfreebsd || ctxt.HeadType == objabi.Hnetbsd {
@@ -1723,6 +1723,8 @@ func asmbElf(ctxt *Link) {
 		eh.Machine = uint16(elf.EM_AARCH64)
 	case sys.I386:
 		eh.Machine = uint16(elf.EM_386)
+	case sys.PPC:
+		eh.Machine = uint16(elf.EM_PPC)
 	case sys.PPC64:
 		eh.Machine = uint16(elf.EM_PPC64)
 	case sys.RISCV64:

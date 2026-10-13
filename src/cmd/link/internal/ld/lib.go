@@ -2438,6 +2438,8 @@ func hostlinkArchArgs(arch *sys.Arch) []string {
 		return []string{"-mabi=64"}
 	case sys.MIPS:
 		return []string{"-mabi=32"}
+	case sys.PPC:
+		return []string{"-m32"}
 	case sys.PPC64:
 		if buildcfg.GOOS == "aix" {
 			return []string{"-maix64"}

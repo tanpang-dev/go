@@ -71,6 +71,8 @@ func Set(GOARCH string, shared bool) *Arch {
 		return archMips64(&mips.Linkmips64)
 	case "mips64le":
 		return archMips64(&mips.Linkmips64le)
+	case "ppc":
+		return archPPC64(&ppc64.Linkppc)
 	case "ppc64":
 		return archPPC64(&ppc64.Linkppc64)
 	case "ppc64le":

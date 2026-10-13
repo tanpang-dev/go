@@ -1527,6 +1527,16 @@ var Linkppc64 = obj.LinkArch{
 	DWARFRegisters: PPC64DWARFRegisters,
 }
 
+var Linkppc = obj.LinkArch{
+	Arch:           sys.ArchPPC,
+	Init:           buildop,
+	Preprocess:     preprocess,
+	Assemble:       span9,
+	Progedit:       progedit,
+	UnaryDst:       unaryDst,
+	DWARFRegisters: PPC64DWARFRegisters,
+}
+
 var Linkppc64le = obj.LinkArch{
 	Arch:           sys.ArchPPC64LE,
 	Init:           buildop,

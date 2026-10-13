@@ -619,6 +619,12 @@ func span9(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 
 	c := ctxt9{ctxt: ctxt, newprog: newprog, cursym: cursym, autosize: int32(p.To.Offset)}
 
+	if isPPC32(ctxt) {
+		for q := p.Link; q != nil; q = q.Link {
+			fixPPC32(ctxt, q)
+		}
+	}
+
 	pc := int64(0)
 	p.Pc = pc
 
@@ -3635,7 +3641,7 @@ func asmout(c *ctxt9, p *obj.Prog, o *Optab, out *[5]uint32) {
 		}
 		var typ objabi.RelocType
 		if !o.ispfx {
-			o1 = AOP_IRR(OP_ADDIS, uint32(p.To.Reg), REG_R13, 0)
+			o1 = AOP_IRR(OP_ADDIS, uint32(p.To.Reg), c.tlsReg(), 0)
 			o2 = AOP_IRR(OP_ADDI, uint32(p.To.Reg), uint32(p.To.Reg), 0)
 			typ = objabi.R_POWER_TLS_LE
 		} else {
@@ -3667,7 +3673,7 @@ func asmout(c *ctxt9, p *obj.Prog, o *Optab, out *[5]uint32) {
 			Siz:  8,
 			Sym:  p.From.Sym,
 		})
-		o3 = AOP_RRR(OP_ADD, uint32(p.To.Reg), uint32(p.To.Reg), REG_R13)
+		o3 = AOP_RRR(OP_ADD, uint32(p.To.Reg), uint32(p.To.Reg), c.tlsReg())
 		c.cursym.AddRel(c.ctxt, obj.Reloc{
 			Type: objabi.R_POWER_TLS,
 			Off:  int32(c.pc) + 8,

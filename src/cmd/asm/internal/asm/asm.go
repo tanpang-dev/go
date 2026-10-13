@@ -424,7 +424,7 @@ func (p *Parser) asmJump(op obj.As, cond string, a []obj.Addr) {
 			prog.From = a[0]
 		}
 	case 3:
-		if p.arch.Family == sys.PPC64 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) {
 			// Special 3-operand jumps.
 			// a[1] is a register number expressed as a constant or register value
 			target = &a[2]
@@ -511,7 +511,7 @@ func (p *Parser) asmJump(op obj.As, cond string, a []obj.Addr) {
 		p.errorf("wrong number of arguments to %s instruction", op)
 		return
 	case 4:
-		if p.arch.Family == sys.S390X || p.arch.Family == sys.PPC64 {
+		if p.arch.Family == sys.S390X || p.arch.InFamily(sys.PPC, sys.PPC64) {
 			// 4-operand compare-and-branch.
 			prog.From = a[0]
 			prog.Reg = p.getRegister(prog, op, &a[1])
@@ -558,7 +558,7 @@ func (p *Parser) asmJump(op obj.As, cond string, a []obj.Addr) {
 		// JMP 4(R0)
 		*targetAddr = *target
 		// On the ppc64, 9a encodes BR (CTR) as BR CTR. We do the same.
-		if p.arch.Family == sys.PPC64 && target.Offset == 0 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) && target.Offset == 0 {
 			targetAddr.Type = obj.TYPE_REG
 		}
 	case target.Type == obj.TYPE_CONST:
@@ -618,7 +618,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			prog.From = a[0]
 			// prog.To is no address.
 		}
-		if p.arch.Family == sys.PPC64 && arch.IsPPC64NEG(op) {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) && arch.IsPPC64NEG(op) {
 			// NEG: From and To are both a[0].
 			prog.To = a[0]
 			prog.From = a[0]
@@ -779,7 +779,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			prog.From = a[0]
 			prog.AddRestSource(a[1])
 			prog.To = a[2]
-		case sys.PPC64:
+		case sys.PPC, sys.PPC64:
 			if arch.IsPPC64CMP(op) {
 				// CMPW etc.; third argument is a CR register that goes into prog.Reg.
 				prog.From = a[0]
@@ -892,7 +892,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			prog.To = a[3]
 			break
 		}
-		if p.arch.Family == sys.PPC64 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) {
 			prog.From = a[0]
 			prog.To = a[3]
 			// If the second argument is not a register argument, it must be
@@ -934,7 +934,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			prog.To = a[4]
 			break
 		}
-		if p.arch.Family == sys.PPC64 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) {
 			prog.From = a[0]
 			// Second arg is always a register type on ppc64.
 			prog.Reg = p.getRegister(prog, op, &a[1])
@@ -983,7 +983,7 @@ func (p *Parser) asmInstruction(op obj.As, cond string, a []obj.Addr) {
 			prog.As = MRC // Both instructions are coded as MRC.
 			break
 		}
-		if p.arch.Family == sys.PPC64 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) {
 			prog.From = a[0]
 			// Second arg is always a register type on ppc64.
 			prog.Reg = p.getRegister(prog, op, &a[1])

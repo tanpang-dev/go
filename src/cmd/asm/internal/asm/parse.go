@@ -721,7 +721,7 @@ func (p *Parser) register(name string, prefix rune) (r1, r2 int16, scale int8, o
 				return
 			}
 		case '+':
-			if p.arch.Family != sys.PPC64 {
+			if !p.arch.InFamily(sys.PPC, sys.PPC64) {
 				p.errorf("(register+register) not supported on this architecture")
 				return
 			}
@@ -1215,7 +1215,7 @@ func (p *Parser) registerIndirect(a *obj.Addr, prefix rune) {
 			// Nothing may follow
 			return
 		}
-		if p.arch.Family == sys.PPC64 {
+		if p.arch.InFamily(sys.PPC, sys.PPC64) {
 			// Special form for PPC64: (R1+R2); alias for (R1)(R2).
 			if prefix != 0 || scale != 0 {
 				p.errorf("illegal address mode for register+register")
@@ -1256,7 +1256,7 @@ func (p *Parser) registerIndirect(a *obj.Addr, prefix rune) {
 			}
 			a.Index = r1
 			if scale != 0 && scale != 1 && (p.arch.Family == sys.ARM64 ||
-				p.arch.Family == sys.PPC64) {
+				p.arch.InFamily(sys.PPC, sys.PPC64)) {
 				// Support (R1)(R2) (no scaling) and (R1)(R2*1).
 				p.errorf("%s doesn't support scaled register format", p.arch.Name)
 			} else {

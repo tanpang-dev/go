@@ -786,9 +786,12 @@ func (ctxt *Link) symtab(pcln *pclntab) []sym.SymKind {
 	// When linking an object that does not contain the runtime we are
 	// creating the moduledata from scratch and it does not have a
 	// compiler-provided size, so read it from the type data.
-	moduledatatype := ldr.Lookup("type:runtime.moduledata", 0)
-	moduledata.SetSize(decodetypeSize(ctxt.Arch, ldr.Data(moduledatatype)))
-	moduledata.Grow(moduledata.Size())
+	// An assembly-only runtime (used while bringing up a new port) has no
+	// type data; keep the size of what was written above.
+	if moduledatatype := ldr.Lookup("type:runtime.moduledata", 0); moduledatatype != 0 {
+		moduledata.SetSize(decodetypeSize(ctxt.Arch, ldr.Data(moduledatatype)))
+		moduledata.Grow(moduledata.Size())
+	}
 
 	lastmoduledatap := ldr.CreateSymForUpdate("runtime.lastmoduledatap", 0)
 	if lastmoduledatap.Type() != sym.SDYNIMPORT {
