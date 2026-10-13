@@ -1,0 +1,11 @@
+// Copyright 2026 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package cpu
+
+// The 750CL (Broadway) has 32-byte L1 cache lines.
+const CacheLinePadSize = 32
+
+func doinit() {
+}

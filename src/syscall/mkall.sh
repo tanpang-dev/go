@@ -247,6 +247,14 @@ linux_mips64le)
 	mksysnum="./mksysnum_linux.pl $unistd_h"
 	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
 	;;
+linux_ppc)
+	GOOSARCH_in=syscall_linux_ppc.go
+	unistd_h=/usr/powerpc-linux-gnu/include/asm/unistd_32.h
+	mksyscall="./mksyscall.pl -b32 -arm"
+	mkerrors="$mkerrors"
+	mksysnum="./mksysnum_linux.pl $unistd_h"
+	mktypes="GOARCH=$GOARCH go tool cgo -godefs"
+	;;
 linux_ppc64)
 	GOOSARCH_in=syscall_linux_ppc64x.go
 	unistd_h=/usr/include/asm/unistd.h

@@ -19,6 +19,7 @@ const (
 	I386    = goarch.I386
 	Loong64 = goarch.LOONG64
 	MIPS    = goarch.MIPS
+	PPC     = goarch.PPC
 	MIPS64  = goarch.MIPS64
 	PPC64   = goarch.PPC64
 	RISCV64 = goarch.RISCV64
@@ -178,6 +179,22 @@ var ArchMIPSLE = &Arch{
 	FixedFrameSize: 4, // LR
 }
 
+// ArchPPC is 32-bit big-endian PowerPC (e.g. the Wii's Broadway / 750CL).
+// The fixed frame holds Go's saved LR at 0(R1) and the SysV LR save slot at 4(R1).
+var ArchPPC = &Arch{
+	Name:           "ppc",
+	Family:         PPC,
+	ByteOrder:      binary.BigEndian,
+	PtrSize:        4,
+	RegSize:        4,
+	MinLC:          4,
+	Alignment:      4,
+	CanMergeLoads:  false,
+	CanJumpTable:   false,
+	HasLR:          true,
+	FixedFrameSize: 8,
+}
+
 var ArchMIPS64 = &Arch{
 	Name:           "mips64",
 	Family:         MIPS64,
@@ -284,6 +301,7 @@ var Archs = [...]*Arch{
 	ArchMIPSLE,
 	ArchMIPS64,
 	ArchMIPS64LE,
+	ArchPPC,
 	ArchPPC64,
 	ArchPPC64LE,
 	ArchRISCV64,

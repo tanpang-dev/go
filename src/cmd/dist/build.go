@@ -75,6 +75,7 @@ var okgoarch = []string{
 	"loong64",
 	"mips",
 	"mipsle",
+	"ppc",
 	"mips64",
 	"mips64le",
 	"ppc64",
@@ -1300,6 +1301,7 @@ var cgoEnabled = map[string]bool{
 	"linux/arm":       true,
 	"linux/arm64":     true,
 	"linux/loong64":   true,
+	"linux/ppc":       false,
 	"linux/ppc64":     true,
 	"linux/ppc64le":   true,
 	"linux/mips":      true,
@@ -1342,6 +1344,7 @@ var cgoEnabled = map[string]bool{
 // See go.dev/issue/56679.
 var broken = map[string]bool{
 	"freebsd/riscv64": true, // Broken: go.dev/issue/76475.
+	"linux/ppc":       true, // Work in progress: 32-bit big-endian PowerPC port.
 	"linux/sparc64":   true, // An incomplete port. See CL 132155.
 }
 

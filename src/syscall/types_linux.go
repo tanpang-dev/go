@@ -77,7 +77,7 @@ struct sockaddr_any {
 // copied from /usr/include/linux/un.h
 struct my_sockaddr_un {
 	sa_family_t sun_family;
-#if defined(__ARM_EABI__) || defined(__powerpc64__) || defined(__riscv__) || defined(__s390x__)
+#if defined(__ARM_EABI__) || defined(__powerpc__) || defined(__riscv__) || defined(__s390x__)
 	// on ARM, PPC, RISC-V, and s390x char is by default unsigned
 	signed char sun_path[108];
 #else
@@ -89,7 +89,7 @@ struct my_sockaddr_un {
 typedef struct user_regs PtraceRegs;
 #elif defined(__aarch64__)
 typedef struct user_pt_regs PtraceRegs;
-#elif defined(__powerpc64__)
+#elif defined(__powerpc__)
 typedef struct pt_regs PtraceRegs;
 #elif defined(__mips__)
 typedef struct user PtraceRegs;
@@ -112,7 +112,8 @@ typedef struct {} ptracePer;
 // The real epoll_event is a union, and godefs doesn't handle it well.
 struct my_epoll_event {
 	uint32_t events;
-#if defined(__ARM_EABI__) || defined(__aarch64__) || (defined(__mips__) && _MIPS_SIM == _ABIO32)
+#if defined(__ARM_EABI__) || defined(__aarch64__) || (defined(__mips__) && _MIPS_SIM == _ABIO32) \
+		|| (defined(__powerpc__) && !defined(__powerpc64__))
 	// padding is not specified in linux/eventpoll.h but added to conform to the
 	// alignment requirements of EABI
 	int32_t padFd;
