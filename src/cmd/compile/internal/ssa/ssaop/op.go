@@ -154,7 +154,7 @@ func (r *RegInfo) String() string {
 func (op Op) IsLoweredGetClosurePtr() bool {
 	switch op {
 	case OpAMD64LoweredGetClosurePtr, OpPPC64LoweredGetClosurePtr, OpARMLoweredGetClosurePtr, OpARM64LoweredGetClosurePtr,
-		Op386LoweredGetClosurePtr, OpMIPS64LoweredGetClosurePtr, OpLOONG64LoweredGetClosurePtr, OpS390XLoweredGetClosurePtr, OpMIPSLoweredGetClosurePtr,
+		Op386LoweredGetClosurePtr, OpMIPS64LoweredGetClosurePtr, OpLOONG64LoweredGetClosurePtr, OpS390XLoweredGetClosurePtr, OpMIPSLoweredGetClosurePtr, OpPPCLoweredGetClosurePtr,
 		OpRISCV64LoweredGetClosurePtr, OpWasmLoweredGetClosurePtr:
 		return true
 	}

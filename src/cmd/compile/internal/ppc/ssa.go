@@ -172,7 +172,11 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 			break
 		}
 		if fitsU16(c) {
-			rc(s, v.Op.Asm(), c, v.Args[0].Reg(), v.Reg())
+			as := v.Op.Asm()
+			if v.Op == ssaop.OpPPCANDconst {
+				as = ppc64.AANDCC // andi. is the only immediate AND
+			}
+			rc(s, as, c, v.Args[0].Reg(), v.Reg())
 			break
 		}
 		rc(s, ppc64.AMOVW, int64(int32(c)), 0, ppc64.REGTMP)
