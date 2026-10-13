@@ -98672,6 +98672,7 @@ var OpcodeTable = [...]OpInfo{
 		ArgLen:       1,
 		ClobberFlags: true,
 		Reg: RegInfo{
+			Clobbers: RegMask{V1: 1070340096, V2: 0}, // R11 R12 R18 R19 R22 R23 R24 R25 R26 R27 R28 R29
 			Outputs: []OutputInfo{
 				{0, RegMask{V1: 536870912, V2: 0}}, // R29
 			},

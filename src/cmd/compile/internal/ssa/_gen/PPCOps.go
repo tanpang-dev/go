@@ -326,11 +326,10 @@ func init() {
 		{name: "LoweredGetCallerPC", reg: gp01, rematerializeable: true},
 
 		// LoweredWB invokes runtime.gcWriteBarrier. arg0=mem, auxint=# of buffer entries needed
-		// It saves all GP registers if necessary,
-		// but clobbers R31 (LR) because it's a call
-		// and R31 (REGTMP).
+		// Like ppc64, it preserves R3-R10, R14-R17, R20, R21 and g and
+		// clobbers the rest of the allocatable registers, LR and R31 (REGTMP).
 		// Returns a pointer to a write barrier buffer in R29.
-		{name: "LoweredWB", argLength: 1, reg: regInfo{clobbers: callerSave.minus(gpg), outputs: []regMask{buildReg("R29")}}, clobberFlags: true, aux: "Int64"},
+		{name: "LoweredWB", argLength: 1, reg: regInfo{clobbers: callerSave.minus(buildReg("R3 R4 R5 R6 R7 R8 R9 R10 R14 R15 R16 R17 R20 R21 g")), outputs: []regMask{buildReg("R29")}}, clobberFlags: true, aux: "Int64"},
 
 		// Do data barrier. arg0=memorys
 		{name: "LoweredPubBarrier", argLength: 1, asm: "SYNC", hasSideEffects: true},

@@ -9,5 +9,5 @@ const (
 	_DefaultPhysPageSize = 4096
 	_PCQuantum           = 4
 	_MinFrameSize        = 8
-	_StackAlign          = 16
+	_StackAlign          = PtrSize
 )

@@ -1107,7 +1107,7 @@ func preprocess(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 			if p.To.Type == obj.TYPE_REG && p.To.Reg == REGSP && p.From.Type == obj.TYPE_CONST {
 				p.Spadj = int32(-p.From.Offset)
 			}
-		case AMOVDU:
+		case AMOVDU, AMOVWU, AMOVWZU: // stwu/lwzu adjust SP on ppc
 			if p.To.Type == obj.TYPE_MEM && p.To.Reg == REGSP {
 				p.Spadj = int32(-p.To.Offset)
 			}

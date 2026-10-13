@@ -356,12 +356,9 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		rr(s, ppc64.AMOVD, v.Args[0].Reg(), 0, ppc64.REG_CTR)
 		pp := s.Call(v)
 		pp.To.Reg = ppc64.REG_CTR
-	case ssaop.OpPPCCALLtail:
+	case ssaop.OpPPCCALLtail, ssaop.OpPPCCALLtailinter:
+		// obj9 moves a register target into CTR for the tail branch.
 		s.TailCall(v)
-	case ssaop.OpPPCCALLtailinter:
-		rr(s, ppc64.AMOVD, v.Args[0].Reg(), 0, ppc64.REG_CTR)
-		pp := s.TailCall(v)
-		pp.To.Reg = ppc64.REG_CTR
 	case ssaop.OpPPCLoweredWB:
 		p := s.Prog(obj.ACALL)
 		p.To.Type = obj.TYPE_MEM

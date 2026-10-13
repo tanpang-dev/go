@@ -6,6 +6,7 @@ package ppc64
 
 import (
 	"cmd/internal/obj"
+	"cmd/internal/objabi"
 	"cmd/internal/sys"
 )
 
@@ -30,6 +31,9 @@ func isReg(a *obj.Addr) bool { return a.Type == obj.TYPE_REG && a.Reg >= REG_R0 
 
 // fixPPC32 rewrites one instruction into a form that exists on 32-bit PowerPC.
 func fixPPC32(ctxt *obj.Link, p *obj.Prog) {
+	if p.From.Sym != nil && p.From.Sym.Type == objabi.STLSBSS {
+		return // MOVD tlsvar(SB), R computes the variable's address
+	}
 	switch p.As {
 	case AMOVD, AMOVW, AMOVWZ:
 		switch {

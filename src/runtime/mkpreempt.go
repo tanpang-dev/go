@@ -83,6 +83,7 @@ var arches = map[string]func(g *gen){
 	"loong64": genLoong64,
 	"mips64x": func(g *gen) { genMIPS(g, true) },
 	"mipsx":   func(g *gen) { genMIPS(g, false) },
+	"ppc":     genPPC,
 	"ppc64x":  genPPC64,
 	"riscv64": genRISCV64,
 	"s390x":   genS390X,
@@ -904,6 +905,49 @@ func genLoong64(g *gen) {
 	p(mov + " (R3), R30")              // load PC to REGTMP
 	p(add+" $%d, R3", l.stack+regsize) // pop frame (including the space pushed by sigctxt.pushCall)
 	p("JMP (R30)")
+}
+
+func genPPC(g *gen) {
+	p := g.p
+
+	// 32-bit PowerPC. Add integer registers R3-R29.
+	// R0 (zero), R1 (SP), R30 (g) are special and not saved here.
+	// R2 is the thread pointer and R13 is reserved; Go code never changes them.
+	// R31 (REGTMP) will be saved manually.
+	// sigctxt.pushCall pushed only the interrupted LR, so R12 is saved here.
+	// Floating point is soft on ppc for now, so no FP state is live.
+	var l = layout{sp: "R1", stack: 8 + 4} // fixed frame, plus one word for saving R31
+	for i := 3; i <= 29; i++ {
+		if i == 13 {
+			continue
+		}
+		reg := fmt.Sprintf("R%d", i)
+		l.add("MOVW", reg, 4)
+	}
+	l.addSpecial(
+		"MOVW CR, R31\nMOVW R31, %d(R1)",
+		"MOVW %d(R1), R31\nMOVFL R31, $0xff", // this is MOVW R31, CR
+		4)
+	l.addSpecial(
+		"MOVW XER, R31\nMOVW R31, %d(R1)",
+		"MOVW %d(R1), R31\nMOVW R31, XER",
+		4)
+
+	p("MOVW R31, -%d(R1)", l.stack-8) // save R31 first, we'll use R31 for saving LR
+	p("MOVW LR, R31")
+	p("MOVWU R31, -%d(R1)", l.stack) // allocate frame, save PC of interrupted instruction (in LR)
+
+	l.save(g)
+	p("CALL ·asyncPreempt2(SB)")
+	l.restore(g)
+
+	p("MOVW %d(R1), R31", l.stack) // sigctxt.pushCall has pushed LR (at interrupt) on stack, restore it
+	p("MOVW R31, LR")
+	p("MOVW (R1), R31") // load PC to CTR
+	p("MOVW R31, CTR")
+	p("MOVW 8(R1), R31")        // restore R31
+	p("ADD $%d, R1", l.stack+8) // pop frame (including the space pushed by sigctxt.pushCall)
+	p("JMP (CTR)")
 }
 
 func genPPC64(g *gen) {
