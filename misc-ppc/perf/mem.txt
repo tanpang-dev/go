@@ -1,0 +1,13 @@
+ 01:34:45 up  9:28,  2 users,  load average: 3.10, 2.19, 2.30
+BenchmarkMemmove4K   	  156056	      2150 ns/op	1905.10 MB/s
+BenchmarkMemmove4K   	  166059	      1919 ns/op	2134.53 MB/s
+BenchmarkMemmove4K   	  188539	      1905 ns/op	2150.46 MB/s
+BenchmarkMemclr4K    	  223983	      1524 ns/op	2688.17 MB/s
+BenchmarkMemclr4K    	  226329	      1532 ns/op	2672.97 MB/s
+BenchmarkMemclr4K    	  238057	      1526 ns/op	2683.53 MB/s
+BenchmarkEqual4K     	   58189	      7364 ns/op	 556.26 MB/s
+BenchmarkEqual4K     	   70296	      5220 ns/op	 784.71 MB/s
+BenchmarkEqual4K     	   74035	      4806 ns/op	 852.28 MB/s
+BenchmarkIndexByte4K 	   23896	     16655 ns/op	 245.94 MB/s
+BenchmarkIndexByte4K 	   23520	     18180 ns/op	 225.30 MB/s
+BenchmarkIndexByte4K 	   22144	     14902 ns/op	 274.87 MB/s

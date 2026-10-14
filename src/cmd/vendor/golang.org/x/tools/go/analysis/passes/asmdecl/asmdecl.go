@@ -93,6 +93,7 @@ var (
 	asmArchMipsLE   = asmArch{name: "mipsle", bigEndian: false, stack: "R29", lr: true}
 	asmArchMips64   = asmArch{name: "mips64", bigEndian: true, stack: "R29", lr: true}
 	asmArchMips64LE = asmArch{name: "mips64le", bigEndian: false, stack: "R29", lr: true}
+	asmArchPpc      = asmArch{name: "ppc", bigEndian: true, stack: "R1", lr: true, writeResult: []string{"SYSCALL"}}
 	asmArchPpc64    = asmArch{name: "ppc64", bigEndian: true, stack: "R1", lr: true, retRegs: []string{"R3", "F1"}, writeResult: []string{"SYSCALL"}}
 	asmArchPpc64LE  = asmArch{name: "ppc64le", bigEndian: false, stack: "R1", lr: true, retRegs: []string{"R3", "F1"}, writeResult: []string{"SYSCALL"}}
 	asmArchRISCV64  = asmArch{name: "riscv64", bigEndian: false, stack: "SP", lr: true, retRegs: []string{"X10", "F10"}, writeResult: []string{"ECALL"}}
@@ -109,6 +110,7 @@ var (
 		&asmArchMipsLE,
 		&asmArchMips64,
 		&asmArchMips64LE,
+		&asmArchPpc,
 		&asmArchPpc64,
 		&asmArchPpc64LE,
 		&asmArchRISCV64,

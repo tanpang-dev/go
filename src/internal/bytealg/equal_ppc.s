@@ -5,13 +5,50 @@
 #include "go_asm.h"
 #include "textflag.h"
 
-// memequal compares R3 and R4 for R5 bytes and leaves 1 or 0 in R3.
-// ponytail: byte loop; a word loop is the upgrade if map/string compares show up.
+// memeqbody compares R3 and R4 for R5 bytes and leaves 1 or 0 in R3.
+// Equally word-aligned inputs compare 16 bytes per iteration.
 TEXT memeqbody<>(SB),NOSPLIT|NOFRAME,$0
 	CMPU	R3, R4
 	BEQ	eq
 	ADD	R3, R5, R6	// end of a
-loop:
+	OR	R3, R4, R7
+	ANDCC	$3, R7, R7
+	BNE	bytes
+words16:
+	SUB	R3, R6, R7
+	CMPU	R7, $16
+	BLT	words4
+	MOVWZ	0(R3), R7
+	MOVWZ	0(R4), R8
+	CMPW	R7, R8
+	BNE	ne
+	MOVWZ	4(R3), R7
+	MOVWZ	4(R4), R8
+	CMPW	R7, R8
+	BNE	ne
+	MOVWZ	8(R3), R7
+	MOVWZ	8(R4), R8
+	CMPW	R7, R8
+	BNE	ne
+	MOVWZ	12(R3), R7
+	MOVWZ	12(R4), R8
+	CMPW	R7, R8
+	BNE	ne
+	ADD	$16, R3
+	ADD	$16, R4
+	BR	words16
+words4:
+	SUB	R3, R6, R7
+	CMPU	R7, $4
+	BLT	bytes
+	MOVWZ	0(R3), R7
+	MOVWZ	0(R4), R8
+	CMPW	R7, R8
+	BNE	ne
+	ADD	$4, R3
+	ADD	$4, R4
+	BR	words4
+bytes:
 	CMPU	R3, R6
 	BEQ	eq
 	MOVBZ	0(R3), R7
@@ -19,7 +56,8 @@ loop:
 	ADD	$1, R3
 	ADD	$1, R4
 	CMPW	R7, R8
-	BEQ	loop
+	BEQ	bytes
+ne:
 	MOVW	$0, R3
 	RET
 eq:

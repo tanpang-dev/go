@@ -609,36 +609,54 @@ TEXT runtime·gcWriteBarrier8<ABIInternal>(SB),NOSPLIT,$0
 
 // The compiler numbers registers from R3 when encoding a bounds failure
 // (see cmd/compile/internal/ppc), so the save area starts at R3.
-#define SAVE_BOUNDS_REGS \
-	MOVW	R3, 16(R1); \
-	MOVW	R4, 20(R1); \
-	MOVW	R5, 24(R1); \
-	MOVW	R6, 28(R1); \
-	MOVW	R7, 32(R1); \
-	MOVW	R8, 36(R1); \
-	MOVW	R9, 40(R1); \
-	MOVW	R10, 44(R1); \
-	MOVW	R11, 48(R1); \
-	MOVW	R12, 52(R1); \
-	MOVW	R13, 56(R1); \
-	MOVW	R14, 60(R1); \
-	MOVW	R15, 64(R1); \
-	MOVW	R16, 68(R1); \
-	MOVW	R17, 72(R1); \
-	MOVW	R18, 76(R1); \
-	MOVD	LR, R31; \
-	MOVW	R31, FIXED_FRAME+0(R1);	/* PC immediately after call to panicBounds */ \
-	ADD	$16, R1, R3;	/* pointer to save area */ \
-	MOVW	R3, FIXED_FRAME+4(R1)
-
 TEXT runtime·panicBounds<ABIInternal>(SB),NOSPLIT,$72-0
 	NO_LOCAL_POINTERS
-	SAVE_BOUNDS_REGS
+	// Save the registers that may hold the index (numbered from R3).
+	MOVW	R3, 16(R1)
+	MOVW	R4, 20(R1)
+	MOVW	R5, 24(R1)
+	MOVW	R6, 28(R1)
+	MOVW	R7, 32(R1)
+	MOVW	R8, 36(R1)
+	MOVW	R9, 40(R1)
+	MOVW	R10, 44(R1)
+	MOVW	R11, 48(R1)
+	MOVW	R12, 52(R1)
+	MOVW	R13, 56(R1)
+	MOVW	R14, 60(R1)
+	MOVW	R15, 64(R1)
+	MOVW	R16, 68(R1)
+	MOVW	R17, 72(R1)
+	MOVW	R18, 76(R1)
+	MOVD	LR, R31
+	MOVW	R31, FIXED_FRAME+0(R1) // PC immediately after call to panicBounds
+	ADD	$16, R1, R3 // pointer to save area
+	MOVW	R3, FIXED_FRAME+4(R1)
 	CALL	runtime·panicBounds32<ABIInternal>(SB)
 	RET
 
 TEXT runtime·panicExtend<ABIInternal>(SB),NOSPLIT,$72-0
 	NO_LOCAL_POINTERS
-	SAVE_BOUNDS_REGS
+	// Save the registers that may hold the index (numbered from R3).
+	MOVW	R3, 16(R1)
+	MOVW	R4, 20(R1)
+	MOVW	R5, 24(R1)
+	MOVW	R6, 28(R1)
+	MOVW	R7, 32(R1)
+	MOVW	R8, 36(R1)
+	MOVW	R9, 40(R1)
+	MOVW	R10, 44(R1)
+	MOVW	R11, 48(R1)
+	MOVW	R12, 52(R1)
+	MOVW	R13, 56(R1)
+	MOVW	R14, 60(R1)
+	MOVW	R15, 64(R1)
+	MOVW	R16, 68(R1)
+	MOVW	R17, 72(R1)
+	MOVW	R18, 76(R1)
+	MOVD	LR, R31
+	MOVW	R31, FIXED_FRAME+0(R1) // PC immediately after call to panicBounds
+	ADD	$16, R1, R3 // pointer to save area
+	MOVW	R3, FIXED_FRAME+4(R1)
 	CALL	runtime·panicBounds32X<ABIInternal>(SB)
 	RET
