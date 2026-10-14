@@ -45,7 +45,7 @@ TEXT runtime·rt0_go(SB),NOSPLIT|TOPFRAME,$0
 	MOVW	R0, 0(R1)	// back chain
 	MOVD	g, R3	// arg 0: G
 	MOVD	$setg_gcc<>(SB), R4	// arg 1: setg
-	MOVW	R0, R5	// arg 2: not used
+	MOVD	$runtime·tls_g_off(SB), R5	// arg 2: tlsg, filled by x_cgo_inittls
 	MOVW	R0, R6	// arg 3: not used
 	BL	(CTR)
 	MOVW	$0, R0
@@ -450,6 +450,22 @@ TEXT gosave_systemstack_switch<>(SB),NOSPLIT|NOFRAME,$0
 	CMP	R31, $0
 	BEQ	2(PC)
 	BL	runtime·abort(SB)
+	RET
+
+// func asmcgocall_no_g(fn, arg unsafe.Pointer)
+// Call fn(arg) aligned appropriately for the gcc ABI.
+// Called on a system stack, and there may be no g yet (during needm).
+TEXT ·asmcgocall_no_g(SB),NOSPLIT,$0-8
+	MOVW	fn+0(FP), R12
+	MOVW	arg+4(FP), R3
+	MOVD	R1, R14	// callee-saved in C
+	SUB	$16, R1
+	RLWNM	$0, R1, $~15, R1
+	MOVW	R0, 0(R1)	// back chain
+	MOVD	R12, CTR
+	BL	(CTR)
+	MOVW	$0, R0
+	MOVD	R14, R1
 	RET
 
 // func asmcgocall(fn, arg unsafe.Pointer) int32

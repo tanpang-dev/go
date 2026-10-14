@@ -6,7 +6,7 @@
 
 package runtime
 
-import _ "unsafe" // for linkname
+import "unsafe"
 
 // Called from assembly only; declared for go vet.
 //
@@ -26,3 +26,8 @@ func save_g()
 //
 //go:nosplit
 func getfp() uintptr { return 0 }
+
+// Called from assembly only; declared for go vet.
+//
+//go:noescape
+func asmcgocall_no_g(fn, arg unsafe.Pointer)
