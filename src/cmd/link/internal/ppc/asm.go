@@ -16,6 +16,12 @@ import (
 
 func gentext(ctxt *ld.Link, ldr *loader.Loader) {}
 
+// debug/elf does not name these (binutils include/elf/ppc.h).
+const (
+	rPPC_REL16_LO elf.R_PPC = 250
+	rPPC_REL16_HA elf.R_PPC = 252
+)
+
 func elfreloc1(ctxt *ld.Link, out *ld.OutBuf, ldr *loader.Loader, s loader.Sym, r loader.ExtReloc, ri int, sectoff int64) bool {
 	elfsym := ld.ElfSymForReloc(ctxt, r.Xsym)
 	rela := func(t elf.R_PPC, off, add int64) {
@@ -35,6 +41,10 @@ func elfreloc1(ctxt *ld.Link, out *ld.OutBuf, ldr *loader.Loader, s loader.Sym, 
 	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS:
 		rela(elf.R_PPC_ADDR16_HA, sectoff+2, r.Xadd)
 		rela(elf.R_PPC_ADDR16_LO, sectoff+6, r.Xadd)
+	case objabi.R_ADDRPOWER_PCREL:
+		// P is the halfword being patched, so move the addend with it.
+		rela(rPPC_REL16_HA, sectoff+2, r.Xadd+2)
+		rela(rPPC_REL16_LO, sectoff+6, r.Xadd+6)
 	case objabi.R_POWER_TLS_LE:
 		rela(elf.R_PPC_TPREL16_HA, sectoff+2, r.Xadd)
 		rela(elf.R_PPC_TPREL16_LO, sectoff+6, r.Xadd)
@@ -65,7 +75,7 @@ func archreloc(target *ld.Target, ldr *loader.Loader, syms *ld.ArchSyms, r loade
 	if target.IsExternal() {
 		// RELA: the addend lives in the relocation, leave the instructions alone.
 		switch r.Type() {
-		case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS, objabi.R_POWER_TLS_LE:
+		case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS, objabi.R_ADDRPOWER_PCREL, objabi.R_POWER_TLS_LE:
 			return val, 2, true
 		case objabi.R_CALLPOWER:
 			return val, 1, true
@@ -76,6 +86,14 @@ func archreloc(target *ld.Target, ldr *loader.Loader, syms *ld.ArchSyms, r loade
 	switch r.Type() {
 	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS:
 		t := ldr.SymAddr(rs) + r.Add()
+		o1, o2 := unpack(val)
+		o1 = o1&^0xffff | computeHA(int32(t))
+		o2 = o2&^0xffff | computeLO(int32(t))
+		return pack(o1, o2), 0, true
+
+	case objabi.R_ADDRPOWER_PCREL:
+		// Relative to the addis, the first instruction of the pair.
+		t := ldr.SymValue(rs) + r.Add() - (ldr.SymValue(s) + int64(r.Off()))
 		o1, o2 := unpack(val)
 		o1 = o1&^0xffff | computeHA(int32(t))
 		o2 = o2&^0xffff | computeLO(int32(t))
@@ -115,7 +133,7 @@ func extreloc(target *ld.Target, ldr *loader.Loader, r loader.Reloc, s loader.Sy
 	switch r.Type() {
 	case objabi.R_POWER_TLS_LE, objabi.R_CALLPOWER:
 		return ld.ExtrelocSimple(ldr, r), true
-	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS:
+	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS, objabi.R_ADDRPOWER_PCREL:
 		return ld.ExtrelocViaOuterSym(ldr, r, s), true
 	}
 	return loader.ExtReloc{}, false

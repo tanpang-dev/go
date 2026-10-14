@@ -891,7 +891,7 @@ var optabGen = []Optab{
 }
 
 // brw RA,RS
-func type_brw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_brw(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 16   // RA
 	o0 |= uint32(p.From.Reg&0x1f) << 21 // RS
@@ -899,7 +899,7 @@ func type_brw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // hashchkp RB,offset(RA)
-func type_hashchkp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_hashchkp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 11           // RB
 	o0 |= uint32((p.From.Offset>>8)&0x1) << 0   // DX
@@ -912,7 +912,7 @@ func type_hashchkp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // hashstp RB,offset(RA)
-func type_hashstp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_hashstp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.From.Reg&0x1f) << 11       // RB
 	o0 |= uint32((p.To.Offset>>8)&0x1) << 0   // DX
@@ -925,7 +925,7 @@ func type_hashstp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // lxvkq XT,UIM
-func type_lxvkq(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_lxvkq(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 0   // TX
 	o0 |= uint32(p.To.Reg&0x1f) << 21      // T
@@ -934,7 +934,7 @@ func type_lxvkq(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // lxvp XTp,DQ(RA)
-func type_lxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_lxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 21       // TX
 	o0 |= uint32((p.To.Reg>>1)&0xf) << 22       // Tp
@@ -947,7 +947,7 @@ func type_lxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // lxvpx XTp,RA,RB
-func type_lxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_lxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 21 // TX
 	o0 |= uint32((p.To.Reg>>1)&0xf) << 22 // Tp
@@ -957,7 +957,7 @@ func type_lxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // lxvrwx XT,RA,RB
-func type_lxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_lxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 0  // TX
 	o0 |= uint32(p.To.Reg&0x1f) << 21     // T
@@ -967,7 +967,7 @@ func type_lxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // mtvsrbmi VRT,bm
-func type_mtvsrbmi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_mtvsrbmi(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21           // VRT
 	o0 |= uint32((p.From.Offset>>6)&0x3ff) << 6 // b0
@@ -977,7 +977,7 @@ func type_mtvsrbmi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // paddi RT,RA,SI,R
-func type_paddi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_paddi(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x1f) << 21                          // RT
@@ -990,7 +990,7 @@ func type_paddi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pextd RA,RS,RB
-func type_pextd(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pextd(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 16   // RA
 	o0 |= uint32(p.From.Reg&0x1f) << 21 // RS
@@ -999,7 +999,7 @@ func type_pextd(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // plxssp VRT,D(RA),R
-func type_plxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_plxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x1f) << 21                 // VRT
@@ -1012,7 +1012,7 @@ func type_plxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // plxv XT,D(RA),R
-func type_plxv(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_plxv(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 26             // TX
@@ -1026,7 +1026,7 @@ func type_plxv(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // plxvp XTp,D(RA),R
-func type_plxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_plxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 21             // TX
@@ -1040,7 +1040,7 @@ func type_plxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pmxvf32gerpp AT,XA,XB,XMSK,YMSK
-func type_pmxvf32gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pmxvf32gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x7) << 23                 // AT
@@ -1055,7 +1055,7 @@ func type_pmxvf32gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pmxvf64gerpp AT,XAp,XB,XMSK,YMSK
-func type_pmxvf64gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pmxvf64gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x7) << 23                 // AT
@@ -1070,7 +1070,7 @@ func type_pmxvf64gerpp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pmxvi16ger2spp AT,XA,XB,XMSK,YMSK,PMSK
-func type_pmxvi16ger2spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pmxvi16ger2spp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x7) << 23                  // AT
@@ -1086,7 +1086,7 @@ func type_pmxvi16ger2spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pmxvi4ger8pp AT,XA,XB,XMSK,YMSK,PMSK
-func type_pmxvi4ger8pp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pmxvi4ger8pp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x7) << 23                  // AT
@@ -1102,7 +1102,7 @@ func type_pmxvi4ger8pp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pmxvi8ger4spp AT,XA,XB,XMSK,YMSK,PMSK
-func type_pmxvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pmxvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.To.Reg&0x7) << 23                  // AT
@@ -1118,7 +1118,7 @@ func type_pmxvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pnop
-func type_pnop(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pnop(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	out[1] = o1
@@ -1126,7 +1126,7 @@ func type_pnop(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pstxssp VRS,D(RA),R
-func type_pstxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pstxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32(p.From.Reg&0x1f) << 21               // VRS
@@ -1139,7 +1139,7 @@ func type_pstxssp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pstxv XS,D(RA),R
-func type_pstxv(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pstxv(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.From.Reg>>5)&0x1) << 26           // SX
@@ -1153,7 +1153,7 @@ func type_pstxv(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // pstxvp XSp,D(RA),R
-func type_pstxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_pstxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.From.Reg>>5)&0x1) << 21           // SX
@@ -1167,7 +1167,7 @@ func type_pstxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // setnbcr RT,BI
-func type_setnbcr(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_setnbcr(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21   // RT
 	o0 |= uint32(p.From.Reg&0x1f) << 16 // BI
@@ -1175,7 +1175,7 @@ func type_setnbcr(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // stxvp XSp,DQ(RA)
-func type_stxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_stxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.From.Reg>>5)&0x1) << 21   // SX
 	o0 |= uint32((p.From.Reg>>1)&0xf) << 22   // Sp
@@ -1188,7 +1188,7 @@ func type_stxvp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // stxvpx XSp,RA,RB
-func type_stxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_stxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.From.Reg>>5)&0x1) << 21 // SX
 	o0 |= uint32((p.From.Reg>>1)&0xf) << 22 // Sp
@@ -1198,7 +1198,7 @@ func type_stxvpx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // stxvrwx XS,RA,RB
-func type_stxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_stxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.From.Reg>>5)&0x1) << 0 // SX
 	o0 |= uint32(p.From.Reg&0x1f) << 21    // S
@@ -1208,7 +1208,7 @@ func type_stxvrwx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vcmpuq BF,VRA,VRB
-func type_vcmpuq(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vcmpuq(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x7) << 23    // BF
 	o0 |= uint32(p.From.Reg&0x1f) << 16 // VRA
@@ -1217,7 +1217,7 @@ func type_vcmpuq(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vcntmbw RT,VRB,MP
-func type_vcntmbw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vcntmbw(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21                 // RT
 	o0 |= uint32(p.From.Reg&0x1f) << 11               // VRB
@@ -1226,7 +1226,7 @@ func type_vcntmbw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vgnb RT,VRB,N
-func type_vgnb(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vgnb(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21                 // RT
 	o0 |= uint32(p.From.Reg&0x1f) << 11               // VRB
@@ -1235,7 +1235,7 @@ func type_vgnb(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vinsw VRT,RB,UIM
-func type_vinsw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vinsw(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21                 // VRT
 	o0 |= uint32(p.From.Reg&0x1f) << 11               // RB
@@ -1244,7 +1244,7 @@ func type_vinsw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vmsumcud VRT,VRA,VRB,VRC
-func type_vmsumcud(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vmsumcud(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21              // VRT
 	o0 |= uint32(p.From.Reg&0x1f) << 16            // VRA
@@ -1254,7 +1254,7 @@ func type_vmsumcud(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // vsrdbi VRT,VRA,VRB,SH
-func type_vsrdbi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_vsrdbi(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21                // VRT
 	o0 |= uint32(p.From.Reg&0x1f) << 16              // VRA
@@ -1264,7 +1264,7 @@ func type_vsrdbi(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xscvuqqp VRT,VRB
-func type_xscvuqqp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xscvuqqp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21   // VRT
 	o0 |= uint32(p.From.Reg&0x1f) << 11 // VRB
@@ -1272,7 +1272,7 @@ func type_xscvuqqp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xsmincqp VRT,VRA,VRB
-func type_xsmincqp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xsmincqp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x1f) << 21   // VRT
 	o0 |= uint32(p.From.Reg&0x1f) << 16 // VRA
@@ -1281,7 +1281,7 @@ func type_xsmincqp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xvcvspbf16 XT,XB
-func type_xvcvspbf16(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xvcvspbf16(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 0   // TX
 	o0 |= uint32(p.To.Reg&0x1f) << 21      // T
@@ -1291,7 +1291,7 @@ func type_xvcvspbf16(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xvi8ger4spp AT,XA,XB
-func type_xvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x7) << 23       // AT
 	o0 |= uint32((p.From.Reg>>5)&0x1) << 2 // AX
@@ -1302,7 +1302,7 @@ func type_xvi8ger4spp(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xvtlsbb BF,XB
-func type_xvtlsbb(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xvtlsbb(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x7) << 23       // BF
 	o0 |= uint32((p.From.Reg>>5)&0x1) << 1 // BX
@@ -1311,7 +1311,7 @@ func type_xvtlsbb(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxblendvw XT,XA,XB,XC
-func type_xxblendvw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxblendvw(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 0               // TX
@@ -1327,7 +1327,7 @@ func type_xxblendvw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxeval XT,XA,XB,XC,IMM
-func type_xxeval(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxeval(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 0               // TX
@@ -1344,7 +1344,7 @@ func type_xxeval(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxgenpcvwm XT,VRB,IMM
-func type_xxgenpcvwm(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxgenpcvwm(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32((p.To.Reg>>5)&0x1) << 0               // TX
 	o0 |= uint32(p.To.Reg&0x1f) << 21                  // T
@@ -1354,7 +1354,7 @@ func type_xxgenpcvwm(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxpermx XT,XA,XB,XC,UIM
-func type_xxpermx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxpermx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 0               // TX
@@ -1371,14 +1371,14 @@ func type_xxpermx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxsetaccz AT
-func type_xxsetaccz(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxsetaccz(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenOpcodes[p.As-AXXSETACCZ]
 	o0 |= uint32(p.To.Reg&0x7) << 23 // AT
 	out[0] = o0
 }
 
 // xxsplti32dx XT,IX,IMM32
-func type_xxsplti32dx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxsplti32dx(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 16                     // TX
@@ -1391,7 +1391,7 @@ func type_xxsplti32dx(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
 }
 
 // xxspltiw XT,IMM32
-func type_xxspltiw(c *ctxt9, p *obj.Prog, t *Optab, out *[5]uint32) {
+func type_xxspltiw(c *ctxt9, p *obj.Prog, t *Optab, out *[8]uint32) {
 	o0 := GenPfxOpcodes[p.As-AXXSPLTIW]
 	o1 := GenOpcodes[p.As-AXXSETACCZ]
 	o1 |= uint32((p.To.Reg>>5)&0x1) << 16         // TX

@@ -87,7 +87,7 @@ type Optab struct {
 	// (e.g when Optab.size > 8).
 	ispfx bool
 
-	asmout func(*ctxt9, *obj.Prog, *Optab, *[5]uint32)
+	asmout func(*ctxt9, *obj.Prog, *Optab, *[8]uint32)
 }
 
 // optab contains an array to be sliced of accepted operand combinations for an
@@ -660,7 +660,7 @@ func span9(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 
 	var otxt int64
 	var q *obj.Prog
-	var out [5]uint32
+	var out [8]uint32
 	var falign int32 // Track increased alignment requirements for prefix.
 	for bflag != 0 {
 		bflag = 0
@@ -838,6 +838,14 @@ func span9(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 			}
 		}
 	}
+
+	if isPPC32(c.ctxt) && c.ctxt.Flag_shared {
+		// The PC fetch parks LR in R0 and the PC in LR; asyncPreempt
+		// assumes R0 is zero and would unwind through the wrong LR.
+		obj.MarkUnsafePoints(c.ctxt, c.cursym.Func().Text, c.newprog, func(p *obj.Prog) bool {
+			return (symAddr(&p.From) || symAddr(&p.To)) && isSymbolAccess(*c.oplook(p))
+		}, nil)
+	}
 }
 
 func isint32(v int64) bool {
@@ -914,7 +922,7 @@ func (c *ctxt9) aclass(a *obj.Addr) int {
 				break
 			} else if a.Sym.Type == objabi.STLSBSS {
 				// For PIC builds, use 12 byte got initial-exec TLS accesses.
-				if c.ctxt.Flag_shared {
+				if c.ctxt.Flag_shared && !isPPC32(c.ctxt) {
 					return C_TLS_IE
 				}
 				// Otherwise, use 8 byte local-exec TLS accesses.
@@ -1254,14 +1262,14 @@ func opset(a, b0 obj.As) {
 // Determine if the build configuration requires a TOC pointer.
 // It is assumed this always called after buildop.
 func NeedTOCpointer(ctxt *obj.Link) bool {
-	return !pfxEnabled && ctxt.Flag_shared
+	return !pfxEnabled && ctxt.Flag_shared && !isPPC32(ctxt)
 }
 
 // Build the opcode table
 func buildop(ctxt *obj.Link) {
 	// Limit PC-relative prefix instruction usage to supported and tested targets.
 	pfxEnabled = buildcfg.GOPPC64 >= 10 && buildcfg.GOOS == "linux"
-	cfg := fmt.Sprintf("power%d/%s/%s", buildcfg.GOPPC64, buildcfg.GOARCH, buildcfg.GOOS)
+	cfg := fmt.Sprintf("power%d/%s/%s/%v", buildcfg.GOPPC64, buildcfg.GOARCH, buildcfg.GOOS, ctxt.Flag_shared)
 	if cfg == buildOpCfg {
 		// Already initialized to correct OS/cpu; stop now.
 		// This happens in the cmd/asm tests,
@@ -1278,6 +1286,9 @@ func buildop(ctxt *obj.Link) {
 			// Enable prefix opcode generation and resize.
 			entry.ispfx = true
 			entry.size = entry.pfxsize
+		}
+		if isPPC32(ctxt) && ctxt.Flag_shared && isSymbolAccess(entry.Optab) {
+			entry.size += pcrelPrefixSize
 		}
 		prefixOptab = append(prefixOptab, entry.Optab)
 
@@ -2435,6 +2446,9 @@ func (c *ctxt9) symbolAccess(s *obj.LSym, d int64, reg int16, op uint32, reuse b
 		// Every symbol access must be made via a TOC anchor.
 		c.ctxt.Diag("symbolAccess called for %s", s.Name)
 	}
+	if isPPC32(c.ctxt) && c.ctxt.Flag_shared {
+		return c.symbolAccessPC32(s, d, reg, op, reuse)
+	}
 	var base uint32
 	form := c.opform(op)
 	if c.ctxt.Flag_shared {
@@ -2545,7 +2559,7 @@ func high16adjusted(d int32) uint16 {
 	return uint16(d >> 16)
 }
 
-func asmout(c *ctxt9, p *obj.Prog, o *Optab, out *[5]uint32) {
+func asmout(c *ctxt9, p *obj.Prog, o *Optab, out *[8]uint32) {
 	o1 := uint32(0)
 	o2 := uint32(0)
 	o3 := uint32(0)
@@ -3913,6 +3927,9 @@ func asmout(c *ctxt9, p *obj.Prog, o *Optab, out *[5]uint32) {
 	out[2] = o3
 	out[3] = o4
 	out[4] = o5
+	if isPPC32(c.ctxt) && c.ctxt.Flag_shared && isSymbolAccess(*o) {
+		prefixPC32(p, out)
+	}
 }
 
 func (c *ctxt9) vregoff(a *obj.Addr) int64 {
