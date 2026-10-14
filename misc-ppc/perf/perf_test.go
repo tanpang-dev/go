@@ -126,3 +126,11 @@ func BenchmarkFloatMath(b *testing.B) {
 	}
 	fsink = x
 }
+
+func BenchmarkSqrt(b *testing.B) {
+	x := 2.0
+	for i := 0; i < b.N; i++ {
+		fsink += math.Sqrt(x)
+		x += 1.5
+	}
+}
