@@ -2968,7 +2968,7 @@ func (s *state) conv(n ir.Node, v *ssa.Value, ft, tt *types.Type) *ssa.Value {
 			conv.op2 = ssaop.OpTrunc64to32
 
 		}
-		if s.config.RegSize == 4 && Arch.LinkArch.Family != sys.MIPS && !s.softFloat {
+		if s.config.RegSize == 4 && Arch.LinkArch.Family != sys.MIPS && Arch.LinkArch.Family != sys.PPC && !s.softFloat {
 			if conv1, ok1 := fpConvOpToSSA32[twoTypes{s.concreteEtype(ft), s.concreteEtype(tt)}]; ok1 {
 				conv = conv1
 			}
@@ -2979,7 +2979,7 @@ func (s *state) conv(n ir.Node, v *ssa.Value, ft, tt *types.Type) *ssa.Value {
 			}
 		}
 
-		if Arch.LinkArch.Family == sys.MIPS && !s.softFloat {
+		if (Arch.LinkArch.Family == sys.MIPS || Arch.LinkArch.Family == sys.PPC) && !s.softFloat {
 			if ft.Size() == 4 && ft.IsInteger() && !ft.IsSigned() {
 				// tt is float32 or float64, and ft is also unsigned
 				if tt.Size() == 4 {

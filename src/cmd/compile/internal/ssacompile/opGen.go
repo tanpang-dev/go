@@ -474,11 +474,42 @@ var registersPPC = [...]ssabase.Register{
 	{Num: 30, ObjNum: ppc64.REGG, Name: "g"},
 	{Num: 31, ObjNum: ppc64.REG_R31, Name: "R31"},
 	{Num: 32, ObjNum: ppc64.REG_F0, Name: "F0"},
+	{Num: 33, ObjNum: ppc64.REG_F1, Name: "F1"},
+	{Num: 34, ObjNum: ppc64.REG_F2, Name: "F2"},
+	{Num: 35, ObjNum: ppc64.REG_F3, Name: "F3"},
+	{Num: 36, ObjNum: ppc64.REG_F4, Name: "F4"},
+	{Num: 37, ObjNum: ppc64.REG_F5, Name: "F5"},
+	{Num: 38, ObjNum: ppc64.REG_F6, Name: "F6"},
+	{Num: 39, ObjNum: ppc64.REG_F7, Name: "F7"},
+	{Num: 40, ObjNum: ppc64.REG_F8, Name: "F8"},
+	{Num: 41, ObjNum: ppc64.REG_F9, Name: "F9"},
+	{Num: 42, ObjNum: ppc64.REG_F10, Name: "F10"},
+	{Num: 43, ObjNum: ppc64.REG_F11, Name: "F11"},
+	{Num: 44, ObjNum: ppc64.REG_F12, Name: "F12"},
+	{Num: 45, ObjNum: ppc64.REG_F13, Name: "F13"},
+	{Num: 46, ObjNum: ppc64.REG_F14, Name: "F14"},
+	{Num: 47, ObjNum: ppc64.REG_F15, Name: "F15"},
+	{Num: 48, ObjNum: ppc64.REG_F16, Name: "F16"},
+	{Num: 49, ObjNum: ppc64.REG_F17, Name: "F17"},
+	{Num: 50, ObjNum: ppc64.REG_F18, Name: "F18"},
+	{Num: 51, ObjNum: ppc64.REG_F19, Name: "F19"},
+	{Num: 52, ObjNum: ppc64.REG_F20, Name: "F20"},
+	{Num: 53, ObjNum: ppc64.REG_F21, Name: "F21"},
+	{Num: 54, ObjNum: ppc64.REG_F22, Name: "F22"},
+	{Num: 55, ObjNum: ppc64.REG_F23, Name: "F23"},
+	{Num: 56, ObjNum: ppc64.REG_F24, Name: "F24"},
+	{Num: 57, ObjNum: ppc64.REG_F25, Name: "F25"},
+	{Num: 58, ObjNum: ppc64.REG_F26, Name: "F26"},
+	{Num: 59, ObjNum: ppc64.REG_F27, Name: "F27"},
+	{Num: 60, ObjNum: ppc64.REG_F28, Name: "F28"},
+	{Num: 61, ObjNum: ppc64.REG_F29, Name: "F29"},
+	{Num: 62, ObjNum: ppc64.REG_F30, Name: "F30"},
+	{Num: 63, ObjNum: ppc64.REG_F31, Name: "F31"},
 }
 var paramIntRegPPC = []int8(nil)
 var paramFloatRegPPC = []int8(nil)
 var gpRegMaskPPC = ssaop.RegMask{V1: 1073733624, V2: 0}
-var fpRegMaskPPC = ssaop.RegMask{V1: 0, V2: 0}
+var fpRegMaskPPC = ssaop.RegMask{V1: 9223372032559808512, V2: 0}
 var specialRegMaskPPC = ssaop.RegMask{V1: 0, V2: 0}
 var framepointerRegPPC = int8(-1)
 var linkRegPPC = int8(-1)

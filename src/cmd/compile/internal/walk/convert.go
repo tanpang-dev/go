@@ -469,7 +469,7 @@ func rtconvfn(src, dst *types.Type) (param, result types.Kind) {
 	}
 
 	switch ssagen.Arch.LinkArch.Family {
-	case sys.ARM, sys.MIPS:
+	case sys.ARM, sys.MIPS, sys.PPC:
 		if src.IsFloat() {
 			switch dst.Kind() {
 			case types.TINT64, types.TUINT64:

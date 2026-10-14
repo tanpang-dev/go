@@ -635,3 +635,46 @@
 (CMOVZzero a (MOVWconst [c])) && c!=0 => a
 (CMOVZ a (MOVWconst [0]) c) => (CMOVZzero a c)
 
+
+// Floating point (hardware FPU; FPRs hold float32 in double format).
+(Add32F ...) => (FADDS ...)
+(Add64F ...) => (FADD ...)
+(Sub32F ...) => (FSUBS ...)
+(Sub64F ...) => (FSUB ...)
+(Mul32F ...) => (FMULS ...)
+(Mul64F ...) => (FMUL ...)
+(Div32F ...) => (FDIVS ...)
+(Div64F ...) => (FDIV ...)
+(Neg(32|64)F ...) => (FNEG ...)
+(Abs ...) => (FABS ...)
+(Const32F ...) => (FMOVSconst ...)
+(Const64F ...) => (FMOVDconst ...)
+
+(Eq(32|64)F x y)  => (FEqual (FCMPU x y))
+(Neq(32|64)F x y) => (XORconst [1] (FEqual <typ.Bool> (FCMPU x y)))
+(Less(32|64)F x y) => (FLessThan (FCMPU x y))
+(Leq(32|64)F x y)  => (FLessEqual (FCMPU x y))
+(NE (XORconst [1] cmp:(FEqual _)) yes no) => (EQ cmp yes no)
+(EQ (XORconst [1] cmp:(FEqual _)) yes no) => (NE cmp yes no)
+
+// int32 <-> float conversions go through a stack slot.
+(Cvt32to64F x) => (CVTWD {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+(Cvt32to32F x) => (FRSP (CVTWD <typ.Float64> {b.Func.NewLocal(v.Pos, typ.Float64)} x))
+(Cvt64Fto32 x) => (CVTDW {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+(Cvt32Fto32 x) => (CVTDW {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+(Cvt32Fto64F ...) => (Copy ...)
+(Cvt64Fto32F ...) => (FRSP ...)
+(Round(32|64)F ...) => (Copy ...)
+
+(Load <t> ptr mem) && ssa.Is32BitFloat(t) => (FMOVSload ptr mem)
+(Load <t> ptr mem) && ssa.Is64BitFloat(t) => (FMOVDload ptr mem)
+(Store {t} ptr val mem) && t.Size() == 4 && t.IsFloat() => (FMOVSstore ptr val mem)
+(Store {t} ptr val mem) && t.Size() == 8 && t.IsFloat() => (FMOVDstore ptr val mem)
+
+(FMOV(S|D)load [off1] {sym} x:(ADDconst [off2] ptr) mem) && (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) => (FMOV(S|D)load [off1+off2] {sym} ptr mem)
+(FMOV(S|D)store [off1] {sym} x:(ADDconst [off2] ptr) val mem) && (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) => (FMOV(S|D)store [off1+off2] {sym} ptr val mem)
+(FMOV(S|D)load [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) mem) && ssa.CanMergeSym(sym1,sym2) =>
+	(FMOV(S|D)load [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr mem)
+(FMOV(S|D)store [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) val mem) && ssa.CanMergeSym(sym1,sym2) =>
+	(FMOV(S|D)store [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr val mem)
+(FMOV(S|D)load [off] {sym} ptr (FMOV(S|D)store [off2] {sym2} ptr2 x _)) && sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2) => x

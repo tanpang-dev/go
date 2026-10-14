@@ -116,6 +116,14 @@ func RewriteBlock(b *ssa.Block) bool {
 			b.ResetWithControl(block.BlockPPCCEQ, v0)
 			return true
 		}
+		// match: (EQ (FEqual cmp) yes no)
+		// result: (CNE cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCFEqual {
+			v_0 := b.Controls[0]
+			cmp := v_0.Args[0]
+			b.ResetWithControl(block.BlockPPCCNE, cmp)
+			return true
+		}
 		// match: (EQ x yes no)
 		// result: (CEQ (CMPWconst [0] x) yes no)
 		for {
@@ -271,6 +279,30 @@ func RewriteBlock(b *ssa.Block) bool {
 			v0.AuxInt = ssa.Int32ToAuxInt(0)
 			v0.AddArg(x)
 			b.ResetWithControl(block.BlockPPCCNE, v0)
+			return true
+		}
+		// match: (NE (FEqual cmp) yes no)
+		// result: (CEQ cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCFEqual {
+			v_0 := b.Controls[0]
+			cmp := v_0.Args[0]
+			b.ResetWithControl(block.BlockPPCCEQ, cmp)
+			return true
+		}
+		// match: (NE (FLessThan cmp) yes no)
+		// result: (CLT cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCFLessThan {
+			v_0 := b.Controls[0]
+			cmp := v_0.Args[0]
+			b.ResetWithControl(block.BlockPPCCLT, cmp)
+			return true
+		}
+		// match: (NE (FGreaterThan cmp) yes no)
+		// result: (CGT cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCFGreaterThan {
+			v_0 := b.Controls[0]
+			cmp := v_0.Args[0]
+			b.ResetWithControl(block.BlockPPCCGT, cmp)
 			return true
 		}
 		// match: (NE x yes no)

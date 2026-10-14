@@ -27,6 +27,13 @@
 (NE (SGTUzero x) yes no) => (CNE (CMPWconst [0] x) yes no)
 (EQ (SGTUzero x) yes no) => (CEQ (CMPWconst [0] x) yes no)
 
+// Floating point: only EQ, LT and GT are safe to branch on directly, since
+// an unordered (NaN) compare sets none of them.
+(NE (FEqual cmp) yes no) => (CEQ cmp yes no)
+(EQ (FEqual cmp) yes no) => (CNE cmp yes no)
+(NE (FLessThan cmp) yes no) => (CLT cmp yes no)
+(NE (FGreaterThan cmp) yes no) => (CGT cmp yes no)
+
 // Everything else compares the control register with zero.
 (EQ  x yes no) => (CEQ (CMPWconst [0] x) yes no)
 (NE  x yes no) => (CNE (CMPWconst [0] x) yes no)

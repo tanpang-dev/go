@@ -146,8 +146,9 @@ func progedit(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
 	case AFMOVD:
 		if p.From.Type == obj.TYPE_FCONST {
 			f64 := p.From.Val.(float64)
-			// Constant not needed in memory for float +/- 0
-			if f64 != 0 && !convertFMOVtoXXSPLTIDP(p) {
+			// Constant not needed in memory for float +/- 0, except on ppc
+			// (32-bit), where the VSX zeroing idiom does not exist.
+			if (f64 != 0 || isPPC32(ctxt)) && !convertFMOVtoXXSPLTIDP(p) {
 				p.From.Type = obj.TYPE_MEM
 				p.From.Sym = ctxt.Float64Sym(f64)
 				p.From.Name = obj.NAME_EXTERN

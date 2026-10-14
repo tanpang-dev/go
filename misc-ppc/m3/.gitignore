@@ -3,3 +3,5 @@ stress
 i64
 stress2
 ppc-i64.txt
+fp
+ppc-fp.txt

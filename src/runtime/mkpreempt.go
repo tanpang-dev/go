@@ -915,7 +915,6 @@ func genPPC(g *gen) {
 	// R2 is the thread pointer and R13 is reserved; Go code never changes them.
 	// R31 (REGTMP) will be saved manually.
 	// sigctxt.pushCall pushed only the interrupted LR, so R12 is saved here.
-	// Floating point is soft on ppc for now, so no FP state is live.
 	var l = layout{sp: "R1", stack: 8 + 4} // fixed frame, plus one word for saving R31
 	for i := 3; i <= 29; i++ {
 		if i == 13 {
@@ -932,6 +931,15 @@ func genPPC(g *gen) {
 		"MOVW XER, R31\nMOVW R31, %d(R1)",
 		"MOVW %d(R1), R31\nMOVW R31, XER",
 		4)
+	// Floating point registers F0-F31 and FPSCR.
+	for i := 0; i <= 31; i++ {
+		reg := fmt.Sprintf("F%d", i)
+		l.add("FMOVD", reg, 8)
+	}
+	l.addSpecial(
+		"MOVFL FPSCR, F0\nFMOVD F0, %d(R1)",
+		"FMOVD %d(R1), F0\nMOVFL F0, FPSCR",
+		8)
 
 	p("MOVW R31, -%d(R1)", l.stack-8) // save R31 first, we'll use R31 for saving LR
 	p("MOVW LR, R31")

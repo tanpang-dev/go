@@ -5,6 +5,8 @@
 package ppc
 
 import (
+	"math"
+
 	"cmd/compile/internal/base"
 	"cmd/compile/internal/ir"
 	"cmd/compile/internal/logopt"
@@ -22,7 +24,15 @@ import (
 // register and blocks branch on a register compared with zero. Each op is
 // expanded here into a PowerPC sequence. R0 is always zero.
 
-func loadByType(t *types.Type) obj.As {
+func isFPreg(r int16) bool { return ppc64.REG_F0 <= r && r <= ppc64.REG_F31 }
+
+func loadByType(t *types.Type, r int16) obj.As {
+	if isFPreg(r) {
+		if t.Size() == 4 {
+			return ppc64.AFMOVS
+		}
+		return ppc64.AFMOVD
+	}
 	switch t.Size() {
 	case 1:
 		if t.IsSigned() {
@@ -40,7 +50,13 @@ func loadByType(t *types.Type) obj.As {
 	panic("bad load type")
 }
 
-func storeByType(t *types.Type) obj.As {
+func storeByType(t *types.Type, r int16) obj.As {
+	if isFPreg(r) {
+		if t.Size() == 4 {
+			return ppc64.AFMOVS
+		}
+		return ppc64.AFMOVD
+	}
 	switch t.Size() {
 	case 1:
 		return ppc64.AMOVB
@@ -76,9 +92,43 @@ func rc(s *ssagen.State, as obj.As, c int64, r, to int16) *obj.Prog {
 }
 
 func movreg(s *ssagen.State, from, to int16) {
-	if from != to {
-		rr(s, ppc64.AMOVD, from, 0, to)
+	if from == to {
+		return
 	}
+	if isFPreg(from) && isFPreg(to) {
+		rr(s, ppc64.AFMOVD, from, 0, to)
+		return
+	}
+	if isFPreg(from) || isFPreg(to) {
+		panic("movreg between register files")
+	}
+	rr(s, ppc64.AMOVD, from, 0, to)
+}
+
+// slot returns the memory operand for the stack slot (v.Aux) plus off.
+func slot(v *ssa.Value, off int64) obj.Addr {
+	a := obj.Addr{Type: obj.TYPE_MEM, Reg: ppc64.REGSP}
+	ssagen.AddAux2(&a, v, off)
+	return a
+}
+
+// crBits2 sets to = CR0 bit a | CR0 bit b (bits as in crBit).
+func crBits2(s *ssagen.State, a, b int64, to int16) {
+	p := s.Prog(ppc64.AMOVW)
+	reg(&p.From, ppc64.REG_CR)
+	reg(&p.To, to)
+	for i, bit := range []int64{a, b} {
+		dst := int16(ppc64.REGTMP)
+		if i == 1 {
+			dst = to
+		}
+		p = s.Prog(ppc64.ARLWNM)
+		p.From.SetConst(bit + 1)
+		p.Reg = to
+		p.AddRestSourceConst(1)
+		reg(&p.To, dst)
+	}
+	rr(s, ppc64.AOR, ppc64.REGTMP, to, to)
 }
 
 // crBit copies one bit of CR0 (0=LT, 1=GT, 2=EQ) into the low bit of to.
@@ -142,14 +192,14 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		if v.Type.IsFlags() {
 			v.Fatalf("load flags not implemented: %v", v.LongString())
 		}
-		p := s.Prog(loadByType(v.Type))
+		p := s.Prog(loadByType(v.Type, v.Reg()))
 		ssagen.AddrAuto(&p.From, v.Args[0])
 		reg(&p.To, v.Reg())
 	case ssaop.OpStoreReg:
 		if v.Type.IsFlags() {
 			v.Fatalf("store flags not implemented: %v", v.LongString())
 		}
-		p := s.Prog(storeByType(v.Type))
+		p := s.Prog(storeByType(v.Type, v.Args[0].Reg()))
 		reg(&p.From, v.Args[0].Reg())
 		ssagen.AddrAuto(&p.To, v)
 
@@ -230,6 +280,78 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		// arg0 > 0
 		cmpConst(s, v.Op == ssaop.OpPPCSGTUzero, v.Args[0].Reg(), 0)
 		crBit(s, 1, v.Reg())
+
+	case ssaop.OpPPCFADDS, ssaop.OpPPCFADD, ssaop.OpPPCFSUBS, ssaop.OpPPCFSUB,
+		ssaop.OpPPCFMULS, ssaop.OpPPCFMUL, ssaop.OpPPCFDIVS, ssaop.OpPPCFDIV:
+		rr(s, v.Op.Asm(), v.Args[1].Reg(), v.Args[0].Reg(), v.Reg())
+	case ssaop.OpPPCFNEG, ssaop.OpPPCFABS, ssaop.OpPPCFRSP:
+		rr(s, v.Op.Asm(), v.Args[0].Reg(), 0, v.Reg())
+	case ssaop.OpPPCFCMPU:
+		p := s.Prog(ppc64.AFCMPU)
+		reg(&p.From, v.Args[0].Reg())
+		reg(&p.To, v.Args[1].Reg())
+	case ssaop.OpPPCFEqual:
+		crBit(s, 2, v.Reg())
+	case ssaop.OpPPCFLessThan:
+		crBit(s, 0, v.Reg())
+	case ssaop.OpPPCFGreaterThan:
+		crBit(s, 1, v.Reg())
+	case ssaop.OpPPCFLessEqual:
+		crBits2(s, 0, 2, v.Reg())
+	case ssaop.OpPPCFGreaterEqual:
+		crBits2(s, 1, 2, v.Reg())
+	case ssaop.OpPPCFMOVSconst, ssaop.OpPPCFMOVDconst:
+		p := s.Prog(v.Op.Asm())
+		p.From.Type = obj.TYPE_FCONST
+		p.From.Val = math.Float64frombits(uint64(v.AuxInt))
+		reg(&p.To, v.Reg())
+	case ssaop.OpPPCFMOVSload, ssaop.OpPPCFMOVDload:
+		p := s.Prog(v.Op.Asm())
+		p.From.Type = obj.TYPE_MEM
+		p.From.Reg = v.Args[0].Reg()
+		ssagen.AddAux(&p.From, v)
+		reg(&p.To, v.Reg())
+	case ssaop.OpPPCFMOVSstore, ssaop.OpPPCFMOVDstore:
+		p := s.Prog(v.Op.Asm())
+		reg(&p.From, v.Args[1].Reg())
+		p.To.Type = obj.TYPE_MEM
+		p.To.Reg = v.Args[0].Reg()
+		ssagen.AddAux(&p.To, v)
+	case ssaop.OpPPCCVTWD, ssaop.OpPPCCVTWUD:
+		// Build the double 2^52 + x (with x biased by 2^31 if signed) in the
+		// slot and subtract the same magic: exact for every 32-bit x.
+		x := v.Args[0].Reg()
+		magic := float64(1 << 52)
+		rc(s, ppc64.AMOVW, 0x43300000, 0, ppc64.REGTMP)
+		p := s.Prog(ppc64.AMOVW)
+		reg(&p.From, ppc64.REGTMP)
+		p.To = slot(v, 0)
+		lo := x
+		if v.Op == ssaop.OpPPCCVTWD {
+			rc(s, ppc64.AXORIS, 0x8000, x, ppc64.REGTMP)
+			lo = ppc64.REGTMP
+			magic += 1 << 31
+		}
+		p = s.Prog(ppc64.AMOVW)
+		reg(&p.From, lo)
+		p.To = slot(v, 4)
+		p = s.Prog(ppc64.AFMOVD)
+		p.From = slot(v, 0)
+		reg(&p.To, v.Reg())
+		p = s.Prog(ppc64.AFMOVD)
+		p.From.Type = obj.TYPE_FCONST
+		p.From.Val = magic
+		reg(&p.To, ppc64.REG_F31)
+		rr(s, ppc64.AFSUB, ppc64.REG_F31, v.Reg(), v.Reg())
+	case ssaop.OpPPCCVTDW:
+		// fctiwz leaves the int32 in the low word of the double.
+		rr(s, ppc64.AFCTIWZ, v.Args[0].Reg(), 0, ppc64.REG_F31)
+		p := s.Prog(ppc64.AFMOVD)
+		reg(&p.From, ppc64.REG_F31)
+		p.To = slot(v, 0)
+		p = s.Prog(ppc64.AMOVWZ)
+		p.From = slot(v, 4)
+		reg(&p.To, v.Reg())
 
 	case ssaop.OpPPCCMPW, ssaop.OpPPCCMPWU:
 		cmpReg(s, v.Op == ssaop.OpPPCCMPWU, v.Args[0].Reg(), v.Args[1].Reg())

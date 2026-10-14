@@ -9,14 +9,23 @@ import "cmd/compile/internal/ssa"
 
 func RewriteValue(v *ssa.Value) bool {
 	switch v.Op {
+	case ssaop.OpAbs:
+		v.Op = ssaop.OpPPCFABS
+		return true
 	case ssaop.OpAdd16:
 		v.Op = ssaop.OpPPCADD
 		return true
 	case ssaop.OpAdd32:
 		v.Op = ssaop.OpPPCADD
 		return true
+	case ssaop.OpAdd32F:
+		v.Op = ssaop.OpPPCFADDS
+		return true
 	case ssaop.OpAdd32withcarry:
 		return rewriteValue_OpAdd32withcarry(v)
+	case ssaop.OpAdd64F:
+		v.Op = ssaop.OpPPCFADD
+		return true
 	case ssaop.OpAdd8:
 		v.Op = ssaop.OpPPCADD
 		return true
@@ -58,6 +67,12 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpConst16(v)
 	case ssaop.OpConst32:
 		return rewriteValue_OpConst32(v)
+	case ssaop.OpConst32F:
+		v.Op = ssaop.OpPPCFMOVSconst
+		return true
+	case ssaop.OpConst64F:
+		v.Op = ssaop.OpPPCFMOVDconst
+		return true
 	case ssaop.OpConst8:
 		return rewriteValue_OpConst8(v)
 	case ssaop.OpConstBool:
@@ -79,6 +94,20 @@ func RewriteValue(v *ssa.Value) bool {
 	case ssaop.OpCtz8NonZero:
 		v.Op = ssaop.OpCtz32
 		return true
+	case ssaop.OpCvt32Fto32:
+		return rewriteValue_OpCvt32Fto32(v)
+	case ssaop.OpCvt32Fto64F:
+		v.Op = ssaop.OpCopy
+		return true
+	case ssaop.OpCvt32to32F:
+		return rewriteValue_OpCvt32to32F(v)
+	case ssaop.OpCvt32to64F:
+		return rewriteValue_OpCvt32to64F(v)
+	case ssaop.OpCvt64Fto32:
+		return rewriteValue_OpCvt64Fto32(v)
+	case ssaop.OpCvt64Fto32F:
+		v.Op = ssaop.OpPPCFRSP
+		return true
 	case ssaop.OpCvtBoolToUint8:
 		v.Op = ssaop.OpCopy
 		return true
@@ -88,8 +117,14 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpDiv16u(v)
 	case ssaop.OpDiv32:
 		return rewriteValue_OpDiv32(v)
+	case ssaop.OpDiv32F:
+		v.Op = ssaop.OpPPCFDIVS
+		return true
 	case ssaop.OpDiv32u:
 		return rewriteValue_OpDiv32u(v)
+	case ssaop.OpDiv64F:
+		v.Op = ssaop.OpPPCFDIV
+		return true
 	case ssaop.OpDiv8:
 		return rewriteValue_OpDiv8(v)
 	case ssaop.OpDiv8u:
@@ -98,6 +133,10 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpEq16(v)
 	case ssaop.OpEq32:
 		return rewriteValue_OpEq32(v)
+	case ssaop.OpEq32F:
+		return rewriteValue_OpEq32F(v)
+	case ssaop.OpEq64F:
+		return rewriteValue_OpEq64F(v)
 	case ssaop.OpEq8:
 		return rewriteValue_OpEq8(v)
 	case ssaop.OpEqB:
@@ -132,8 +171,12 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpLeq16U(v)
 	case ssaop.OpLeq32:
 		return rewriteValue_OpLeq32(v)
+	case ssaop.OpLeq32F:
+		return rewriteValue_OpLeq32F(v)
 	case ssaop.OpLeq32U:
 		return rewriteValue_OpLeq32U(v)
+	case ssaop.OpLeq64F:
+		return rewriteValue_OpLeq64F(v)
 	case ssaop.OpLeq8:
 		return rewriteValue_OpLeq8(v)
 	case ssaop.OpLeq8U:
@@ -144,8 +187,12 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpLess16U(v)
 	case ssaop.OpLess32:
 		return rewriteValue_OpLess32(v)
+	case ssaop.OpLess32F:
+		return rewriteValue_OpLess32F(v)
 	case ssaop.OpLess32U:
 		return rewriteValue_OpLess32U(v)
+	case ssaop.OpLess64F:
+		return rewriteValue_OpLess64F(v)
 	case ssaop.OpLess8:
 		return rewriteValue_OpLess8(v)
 	case ssaop.OpLess8U:
@@ -198,8 +245,14 @@ func RewriteValue(v *ssa.Value) bool {
 	case ssaop.OpMul32:
 		v.Op = ssaop.OpPPCMUL
 		return true
+	case ssaop.OpMul32F:
+		v.Op = ssaop.OpPPCFMULS
+		return true
 	case ssaop.OpMul32uhilo:
 		v.Op = ssaop.OpPPCMULTU
+		return true
+	case ssaop.OpMul64F:
+		v.Op = ssaop.OpPPCFMUL
 		return true
 	case ssaop.OpMul8:
 		v.Op = ssaop.OpPPCMUL
@@ -210,6 +263,12 @@ func RewriteValue(v *ssa.Value) bool {
 	case ssaop.OpNeg32:
 		v.Op = ssaop.OpPPCNEG
 		return true
+	case ssaop.OpNeg32F:
+		v.Op = ssaop.OpPPCFNEG
+		return true
+	case ssaop.OpNeg64F:
+		v.Op = ssaop.OpPPCFNEG
+		return true
 	case ssaop.OpNeg8:
 		v.Op = ssaop.OpPPCNEG
 		return true
@@ -217,6 +276,10 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpNeq16(v)
 	case ssaop.OpNeq32:
 		return rewriteValue_OpNeq32(v)
+	case ssaop.OpNeq32F:
+		return rewriteValue_OpNeq32F(v)
+	case ssaop.OpNeq64F:
+		return rewriteValue_OpNeq64F(v)
 	case ssaop.OpNeq8:
 		return rewriteValue_OpNeq8(v)
 	case ssaop.OpNeqB:
@@ -255,6 +318,14 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpPPCCMOVZ(v)
 	case ssaop.OpPPCCMOVZzero:
 		return rewriteValue_OpPPCCMOVZzero(v)
+	case ssaop.OpPPCFMOVDload:
+		return rewriteValue_OpPPCFMOVDload(v)
+	case ssaop.OpPPCFMOVDstore:
+		return rewriteValue_OpPPCFMOVDstore(v)
+	case ssaop.OpPPCFMOVSload:
+		return rewriteValue_OpPPCFMOVSload(v)
+	case ssaop.OpPPCFMOVSstore:
+		return rewriteValue_OpPPCFMOVSstore(v)
 	case ssaop.OpPPCLoweredPanicBoundsRC:
 		return rewriteValue_OpPPCLoweredPanicBoundsRC(v)
 	case ssaop.OpPPCLoweredPanicBoundsRR:
@@ -356,6 +427,12 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpRotateLeft64(v)
 	case ssaop.OpRotateLeft8:
 		return rewriteValue_OpRotateLeft8(v)
+	case ssaop.OpRound32F:
+		v.Op = ssaop.OpCopy
+		return true
+	case ssaop.OpRound64F:
+		v.Op = ssaop.OpCopy
+		return true
 	case ssaop.OpRsh16Ux16:
 		return rewriteValue_OpRsh16Ux16(v)
 	case ssaop.OpRsh16Ux32:
@@ -432,8 +509,14 @@ func RewriteValue(v *ssa.Value) bool {
 	case ssaop.OpSub32:
 		v.Op = ssaop.OpPPCSUB
 		return true
+	case ssaop.OpSub32F:
+		v.Op = ssaop.OpPPCFSUBS
+		return true
 	case ssaop.OpSub32withcarry:
 		return rewriteValue_OpSub32withcarry(v)
+	case ssaop.OpSub64F:
+		v.Op = ssaop.OpPPCFSUB
+		return true
 	case ssaop.OpSub8:
 		v.Op = ssaop.OpPPCSUB
 		return true
@@ -724,6 +807,64 @@ func rewriteValue_OpCtz8(v *ssa.Value) bool {
 		return true
 	}
 }
+func rewriteValue_OpCvt32Fto32(v *ssa.Value) bool {
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Cvt32Fto32 x)
+	// result: (CVTDW {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+	for {
+		x := v_0
+		v.Reset(ssaop.OpPPCCVTDW)
+		v.Aux = ssa.SymToAux(b.Func.NewLocal(v.Pos, typ.Float64))
+		v.AddArg(x)
+		return true
+	}
+}
+func rewriteValue_OpCvt32to32F(v *ssa.Value) bool {
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Cvt32to32F x)
+	// result: (FRSP (CVTWD <typ.Float64> {b.Func.NewLocal(v.Pos, typ.Float64)} x))
+	for {
+		x := v_0
+		v.Reset(ssaop.OpPPCFRSP)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCCVTWD, typ.Float64)
+		v0.Aux = ssa.SymToAux(b.Func.NewLocal(v.Pos, typ.Float64))
+		v0.AddArg(x)
+		v.AddArg(v0)
+		return true
+	}
+}
+func rewriteValue_OpCvt32to64F(v *ssa.Value) bool {
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Cvt32to64F x)
+	// result: (CVTWD {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+	for {
+		x := v_0
+		v.Reset(ssaop.OpPPCCVTWD)
+		v.Aux = ssa.SymToAux(b.Func.NewLocal(v.Pos, typ.Float64))
+		v.AddArg(x)
+		return true
+	}
+}
+func rewriteValue_OpCvt64Fto32(v *ssa.Value) bool {
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Cvt64Fto32 x)
+	// result: (CVTDW {b.Func.NewLocal(v.Pos, typ.Float64)} x)
+	for {
+		x := v_0
+		v.Reset(ssaop.OpPPCCVTDW)
+		v.Aux = ssa.SymToAux(b.Func.NewLocal(v.Pos, typ.Float64))
+		v.AddArg(x)
+		return true
+	}
+}
 func rewriteValue_OpDiv16(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -877,6 +1018,38 @@ func rewriteValue_OpEq32(v *ssa.Value) bool {
 		v.Reset(ssaop.OpPPCSGTUconst)
 		v.AuxInt = ssa.Int32ToAuxInt(1)
 		v0 := b.NewValue0(v.Pos, ssaop.OpPPCXOR, typ.UInt32)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
+		return true
+	}
+}
+func rewriteValue_OpEq32F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Eq32F x y)
+	// result: (FEqual (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFEqual)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
+		return true
+	}
+}
+func rewriteValue_OpEq64F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Eq64F x y)
+	// result: (FEqual (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFEqual)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
 		v0.AddArg2(x, y)
 		v.AddArg(v0)
 		return true
@@ -1082,6 +1255,22 @@ func rewriteValue_OpLeq32(v *ssa.Value) bool {
 		return true
 	}
 }
+func rewriteValue_OpLeq32F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Leq32F x y)
+	// result: (FLessEqual (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFLessEqual)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
+		return true
+	}
+}
 func rewriteValue_OpLeq32U(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -1095,6 +1284,22 @@ func rewriteValue_OpLeq32U(v *ssa.Value) bool {
 		v.Reset(ssaop.OpPPCXORconst)
 		v.AuxInt = ssa.Int32ToAuxInt(1)
 		v0 := b.NewValue0(v.Pos, ssaop.OpPPCSGTU, typ.Bool)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
+		return true
+	}
+}
+func rewriteValue_OpLeq64F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Leq64F x y)
+	// result: (FLessEqual (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFLessEqual)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
 		v0.AddArg2(x, y)
 		v.AddArg(v0)
 		return true
@@ -1195,6 +1400,22 @@ func rewriteValue_OpLess32(v *ssa.Value) bool {
 		return true
 	}
 }
+func rewriteValue_OpLess32F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Less32F x y)
+	// result: (FLessThan (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFLessThan)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
+		return true
+	}
+}
 func rewriteValue_OpLess32U(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -1205,6 +1426,22 @@ func rewriteValue_OpLess32U(v *ssa.Value) bool {
 		y := v_1
 		v.Reset(ssaop.OpPPCSGTU)
 		v.AddArg2(y, x)
+		return true
+	}
+}
+func rewriteValue_OpLess64F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	// match: (Less64F x y)
+	// result: (FLessThan (FCMPU x y))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCFLessThan)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v0.AddArg2(x, y)
+		v.AddArg(v0)
 		return true
 	}
 }
@@ -1330,6 +1567,34 @@ func rewriteValue_OpLoad(v *ssa.Value) bool {
 			break
 		}
 		v.Reset(ssaop.OpPPCMOVWload)
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (Load <t> ptr mem)
+	// cond: ssa.Is32BitFloat(t)
+	// result: (FMOVSload ptr mem)
+	for {
+		t := v.Type
+		ptr := v_0
+		mem := v_1
+		if !(ssa.Is32BitFloat(t)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSload)
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (Load <t> ptr mem)
+	// cond: ssa.Is64BitFloat(t)
+	// result: (FMOVDload ptr mem)
+	for {
+		t := v.Type
+		ptr := v_0
+		mem := v_1
+		if !(ssa.Is64BitFloat(t)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDload)
 		v.AddArg2(ptr, mem)
 		return true
 	}
@@ -2232,6 +2497,46 @@ func rewriteValue_OpNeq32(v *ssa.Value) bool {
 		return true
 	}
 }
+func rewriteValue_OpNeq32F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Neq32F x y)
+	// result: (XORconst [1] (FEqual <typ.Bool> (FCMPU x y)))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCXORconst)
+		v.AuxInt = ssa.Int32ToAuxInt(1)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFEqual, typ.Bool)
+		v1 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v1.AddArg2(x, y)
+		v0.AddArg(v1)
+		v.AddArg(v0)
+		return true
+	}
+}
+func rewriteValue_OpNeq64F(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	b := v.Block
+	typ := &b.Func.Config.Types
+	// match: (Neq64F x y)
+	// result: (XORconst [1] (FEqual <typ.Bool> (FCMPU x y)))
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCXORconst)
+		v.AuxInt = ssa.Int32ToAuxInt(1)
+		v0 := b.NewValue0(v.Pos, ssaop.OpPPCFEqual, typ.Bool)
+		v1 := b.NewValue0(v.Pos, ssaop.OpPPCFCMPU, types.TypeFlags)
+		v1.AddArg2(x, y)
+		v0.AddArg(v1)
+		v.AddArg(v0)
+		return true
+	}
+}
 func rewriteValue_OpNeq8(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -2595,6 +2900,248 @@ func rewriteValue_OpPPCCMOVZzero(v *ssa.Value) bool {
 			break
 		}
 		v.CopyOf(a)
+		return true
+	}
+	return false
+}
+func rewriteValue_OpPPCFMOVDload(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FMOVDload [off1] {sym} x:(ADDconst [off2] ptr) mem)
+	// cond: (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1)
+	// result: (FMOVDload [off1+off2] {sym} ptr mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		x := v_0
+		if x.Op != ssaop.OpPPCADDconst {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(x.AuxInt)
+		ptr := x.Args[0]
+		mem := v_1
+		if !(ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDload)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(sym)
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (FMOVDload [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) mem)
+	// cond: ssa.CanMergeSym(sym1,sym2)
+	// result: (FMOVDload [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym1 := ssa.AuxToSym(v.Aux)
+		if v_0.Op != ssaop.OpPPCMOVWaddr {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_0.AuxInt)
+		sym2 := ssa.AuxToSym(v_0.Aux)
+		ptr := v_0.Args[0]
+		mem := v_1
+		if !(ssa.CanMergeSym(sym1, sym2)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDload)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(ssa.MergeSym(sym1, sym2))
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (FMOVDload [off] {sym} ptr (FMOVDstore [off2] {sym2} ptr2 x _))
+	// cond: sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2)
+	// result: x
+	for {
+		off := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		ptr := v_0
+		if v_1.Op != ssaop.OpPPCFMOVDstore {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_1.AuxInt)
+		sym2 := ssa.AuxToSym(v_1.Aux)
+		x := v_1.Args[1]
+		ptr2 := v_1.Args[0]
+		if !(sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2)) {
+			break
+		}
+		v.CopyOf(x)
+		return true
+	}
+	return false
+}
+func rewriteValue_OpPPCFMOVDstore(v *ssa.Value) bool {
+	v_2 := v.Args[2]
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FMOVDstore [off1] {sym} x:(ADDconst [off2] ptr) val mem)
+	// cond: (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1)
+	// result: (FMOVDstore [off1+off2] {sym} ptr val mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		x := v_0
+		if x.Op != ssaop.OpPPCADDconst {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(x.AuxInt)
+		ptr := x.Args[0]
+		val := v_1
+		mem := v_2
+		if !(ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDstore)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(sym)
+		v.AddArg3(ptr, val, mem)
+		return true
+	}
+	// match: (FMOVDstore [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) val mem)
+	// cond: ssa.CanMergeSym(sym1,sym2)
+	// result: (FMOVDstore [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr val mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym1 := ssa.AuxToSym(v.Aux)
+		if v_0.Op != ssaop.OpPPCMOVWaddr {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_0.AuxInt)
+		sym2 := ssa.AuxToSym(v_0.Aux)
+		ptr := v_0.Args[0]
+		val := v_1
+		mem := v_2
+		if !(ssa.CanMergeSym(sym1, sym2)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDstore)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(ssa.MergeSym(sym1, sym2))
+		v.AddArg3(ptr, val, mem)
+		return true
+	}
+	return false
+}
+func rewriteValue_OpPPCFMOVSload(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FMOVSload [off1] {sym} x:(ADDconst [off2] ptr) mem)
+	// cond: (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1)
+	// result: (FMOVSload [off1+off2] {sym} ptr mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		x := v_0
+		if x.Op != ssaop.OpPPCADDconst {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(x.AuxInt)
+		ptr := x.Args[0]
+		mem := v_1
+		if !(ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSload)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(sym)
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (FMOVSload [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) mem)
+	// cond: ssa.CanMergeSym(sym1,sym2)
+	// result: (FMOVSload [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym1 := ssa.AuxToSym(v.Aux)
+		if v_0.Op != ssaop.OpPPCMOVWaddr {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_0.AuxInt)
+		sym2 := ssa.AuxToSym(v_0.Aux)
+		ptr := v_0.Args[0]
+		mem := v_1
+		if !(ssa.CanMergeSym(sym1, sym2)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSload)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(ssa.MergeSym(sym1, sym2))
+		v.AddArg2(ptr, mem)
+		return true
+	}
+	// match: (FMOVSload [off] {sym} ptr (FMOVSstore [off2] {sym2} ptr2 x _))
+	// cond: sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2)
+	// result: x
+	for {
+		off := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		ptr := v_0
+		if v_1.Op != ssaop.OpPPCFMOVSstore {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_1.AuxInt)
+		sym2 := ssa.AuxToSym(v_1.Aux)
+		x := v_1.Args[1]
+		ptr2 := v_1.Args[0]
+		if !(sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2)) {
+			break
+		}
+		v.CopyOf(x)
+		return true
+	}
+	return false
+}
+func rewriteValue_OpPPCFMOVSstore(v *ssa.Value) bool {
+	v_2 := v.Args[2]
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FMOVSstore [off1] {sym} x:(ADDconst [off2] ptr) val mem)
+	// cond: (ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1)
+	// result: (FMOVSstore [off1+off2] {sym} ptr val mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym := ssa.AuxToSym(v.Aux)
+		x := v_0
+		if x.Op != ssaop.OpPPCADDconst {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(x.AuxInt)
+		ptr := x.Args[0]
+		val := v_1
+		mem := v_2
+		if !(ssa.Is16Bit(int64(off1+off2)) || x.Uses == 1) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSstore)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(sym)
+		v.AddArg3(ptr, val, mem)
+		return true
+	}
+	// match: (FMOVSstore [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) val mem)
+	// cond: ssa.CanMergeSym(sym1,sym2)
+	// result: (FMOVSstore [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr val mem)
+	for {
+		off1 := ssa.AuxIntToInt32(v.AuxInt)
+		sym1 := ssa.AuxToSym(v.Aux)
+		if v_0.Op != ssaop.OpPPCMOVWaddr {
+			break
+		}
+		off2 := ssa.AuxIntToInt32(v_0.AuxInt)
+		sym2 := ssa.AuxToSym(v_0.Aux)
+		ptr := v_0.Args[0]
+		val := v_1
+		mem := v_2
+		if !(ssa.CanMergeSym(sym1, sym2)) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSstore)
+		v.AuxInt = ssa.Int32ToAuxInt(off1 + off2)
+		v.Aux = ssa.SymToAux(ssa.MergeSym(sym1, sym2))
+		v.AddArg3(ptr, val, mem)
 		return true
 	}
 	return false
@@ -6309,6 +6856,36 @@ func rewriteValue_OpStore(v *ssa.Value) bool {
 		v.AddArg3(ptr, val, mem)
 		return true
 	}
+	// match: (Store {t} ptr val mem)
+	// cond: t.Size() == 4 && t.IsFloat()
+	// result: (FMOVSstore ptr val mem)
+	for {
+		t := ssa.AuxToType(v.Aux)
+		ptr := v_0
+		val := v_1
+		mem := v_2
+		if !(t.Size() == 4 && t.IsFloat()) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVSstore)
+		v.AddArg3(ptr, val, mem)
+		return true
+	}
+	// match: (Store {t} ptr val mem)
+	// cond: t.Size() == 8 && t.IsFloat()
+	// result: (FMOVDstore ptr val mem)
+	for {
+		t := ssa.AuxToType(v.Aux)
+		ptr := v_0
+		val := v_1
+		mem := v_2
+		if !(t.Size() == 8 && t.IsFloat()) {
+			break
+		}
+		v.Reset(ssaop.OpPPCFMOVDstore)
+		v.AddArg3(ptr, val, mem)
+		return true
+	}
 	return false
 }
 func rewriteValue_OpSub32withcarry(v *ssa.Value) bool {
@@ -6775,6 +7352,20 @@ func RewriteBlock(b *ssa.Block) bool {
 			b.SwapSuccessors()
 			return true
 		}
+		// match: (EQ (XORconst [1] cmp:(FEqual _)) yes no)
+		// result: (NE cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCXORconst {
+			v_0 := b.Controls[0]
+			if ssa.AuxIntToInt32(v_0.AuxInt) != 1 {
+				break
+			}
+			cmp := v_0.Args[0]
+			if cmp.Op != ssaop.OpPPCFEqual {
+				break
+			}
+			b.ResetWithControl(block.BlockPPCNE, cmp)
+			return true
+		}
 	case block.BlockPPCGEZ:
 		// match: (GEZ (MOVWconst [c]) yes no)
 		// cond: c >= 0
@@ -7044,6 +7635,20 @@ func RewriteBlock(b *ssa.Block) bool {
 				break
 			}
 			b.Reset(block.BlockFirst)
+			return true
+		}
+		// match: (NE (XORconst [1] cmp:(FEqual _)) yes no)
+		// result: (EQ cmp yes no)
+		for b.Controls[0].Op == ssaop.OpPPCXORconst {
+			v_0 := b.Controls[0]
+			if ssa.AuxIntToInt32(v_0.AuxInt) != 1 {
+				break
+			}
+			cmp := v_0.Args[0]
+			if cmp.Op != ssaop.OpPPCFEqual {
+				break
+			}
+			b.ResetWithControl(block.BlockPPCEQ, cmp)
 			return true
 		}
 	}

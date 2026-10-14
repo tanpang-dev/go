@@ -15,9 +15,9 @@ func Init(arch *ssagen.ArchInfo) {
 	arch.LinkArch = &ppc64.Linkppc
 	arch.REGSP = ppc64.REGSP
 	arch.MAXWIDTH = (1 << 31) - 1
-	// ponytail: soft float everywhere for now; the 750CL FPU (minus fsqrt and
-	// the 64-bit int conversions) can be used later.
-	arch.SoftFloat = true
+	// Hardware FPU. The 750CL lacks fsqrt and the 64-bit integer conversions;
+	// those fall back to Go code (math.sqrt, runtime int64 conversions).
+	arch.SoftFloat = false
 	arch.ZeroRange = zerorange
 	arch.Ginsnop = ginsnop
 	arch.SSAMarkMoves = func(s *ssagen.State, b *ssa.Block) {}

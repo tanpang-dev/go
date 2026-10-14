@@ -65,7 +65,38 @@ var regNamesPPC = []string{
 	"g",   // REGG
 	"R31", // REGTMP
 
-	"F0", // FP registers are unused while floating point is soft
+	"F0",
+	"F1",
+	"F2",
+	"F3",
+	"F4",
+	"F5",
+	"F6",
+	"F7",
+	"F8",
+	"F9",
+	"F10",
+	"F11",
+	"F12",
+	"F13",
+	"F14",
+	"F15",
+	"F16",
+	"F17",
+	"F18",
+	"F19",
+	"F20",
+	"F21",
+	"F22",
+	"F23",
+	"F24",
+	"F25",
+	"F26",
+	"F27",
+	"F28",
+	"F29",
+	"F30",
+	"F31", // FP temporary for conversions, not allocated
 }
 
 func init() {
@@ -96,9 +127,9 @@ func init() {
 		gpsp       = gp.union(buildReg("SP"))
 		gpspg      = gpg.union(buildReg("SP"))
 		gpspsbg    = gpspg.union(buildReg("SB"))
-		fp         = regMask{}
+		fp         = buildReg("F0 F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 F11 F12 F13 F14 F15 F16 F17 F18 F19 F20 F21 F22 F23 F24 F25 F26 F27 F28 F29 F30")
 		ctxt       = buildReg("R11")
-		callerSave = gp.union(buildReg("g")) // runtime.setg (and anything calling it) may clobber g
+		callerSave = gp.union(fp).union(buildReg("g")) // runtime.setg (and anything calling it) may clobber g
 		first7     = buildReg("R3 R4 R5 R6 R7 R8 R9")
 		first4     = buildReg("R3 R4 R5 R6")
 	)
@@ -115,6 +146,15 @@ func init() {
 		gpstore0 = regInfo{inputs: []regMask{gpspsbg}}
 		gp2cr    = regInfo{inputs: []regMask{gpg, gpg}}
 		gp1cr    = regInfo{inputs: []regMask{gpg}}
+		crgp     = regInfo{inputs: nil, outputs: []regMask{gp}}
+		fp01     = regInfo{inputs: nil, outputs: []regMask{fp}}
+		fp11     = regInfo{inputs: []regMask{fp}, outputs: []regMask{fp}}
+		fp21     = regInfo{inputs: []regMask{fp, fp}, outputs: []regMask{fp}}
+		fp2cr    = regInfo{inputs: []regMask{fp, fp}}
+		fpload   = regInfo{inputs: []regMask{gpspsbg}, outputs: []regMask{fp}}
+		fpstore  = regInfo{inputs: []regMask{gpspsbg, fp}}
+		gpfp     = regInfo{inputs: []regMask{gp}, outputs: []regMask{fp}}
+		fpgp     = regInfo{inputs: []regMask{fp}, outputs: []regMask{gp}}
 	)
 	ops := []opData{
 		{name: "ADD", argLength: 2, reg: gp21, asm: "ADD", commutative: true, earlyOk: true},                           // arg0 + arg1
@@ -166,6 +206,40 @@ func init() {
 		{name: "CMPWU", argLength: 2, reg: gp2cr, asm: "CMPWU", typ: "Flags"},                       // unsigned compare arg0 to arg1
 		{name: "CMPWconst", argLength: 1, reg: gp1cr, asm: "CMPW", aux: "Int32", typ: "Flags"},     // signed compare arg0 to auxInt (16-bit)
 		{name: "CMPWUconst", argLength: 1, reg: gp1cr, asm: "CMPWU", aux: "Int32", typ: "Flags"},   // unsigned compare arg0 to auxInt (16-bit)
+
+		// floating point. FPRs hold float32 values in double format; the
+		// single-precision forms round their result to float32.
+		{name: "FADDS", argLength: 2, reg: fp21, asm: "FADDS", commutative: true, earlyOk: true}, // arg0 + arg1 (float32)
+		{name: "FADD", argLength: 2, reg: fp21, asm: "FADD", commutative: true, earlyOk: true},   // arg0 + arg1
+		{name: "FSUBS", argLength: 2, reg: fp21, asm: "FSUBS", earlyOk: true},                    // arg0 - arg1 (float32)
+		{name: "FSUB", argLength: 2, reg: fp21, asm: "FSUB", earlyOk: true},                      // arg0 - arg1
+		{name: "FMULS", argLength: 2, reg: fp21, asm: "FMULS", commutative: true, earlyOk: true}, // arg0 * arg1 (float32)
+		{name: "FMUL", argLength: 2, reg: fp21, asm: "FMUL", commutative: true, earlyOk: true},   // arg0 * arg1
+		{name: "FDIVS", argLength: 2, reg: fp21, asm: "FDIVS", earlyOk: true},                    // arg0 / arg1 (float32)
+		{name: "FDIV", argLength: 2, reg: fp21, asm: "FDIV", earlyOk: true},                      // arg0 / arg1
+		{name: "FNEG", argLength: 1, reg: fp11, asm: "FNEG", earlyOk: true},                      // -arg0
+		{name: "FABS", argLength: 1, reg: fp11, asm: "FABS", earlyOk: true},                      // abs(arg0)
+		{name: "FRSP", argLength: 1, reg: fp11, asm: "FRSP", earlyOk: true},                      // round arg0 to float32
+
+		{name: "FCMPU", argLength: 2, reg: fp2cr, asm: "FCMPU", typ: "Flags"}, // compare arg0 with arg1 into CR0 (unordered sets SO)
+		// CR0 bits as 0/1. NaN compares unordered, so all of these are false for it.
+		{name: "FEqual", argLength: 1, reg: crgp},        // EQ
+		{name: "FLessThan", argLength: 1, reg: crgp},     // LT
+		{name: "FLessEqual", argLength: 1, reg: crgp},    // LT || EQ
+		{name: "FGreaterThan", argLength: 1, reg: crgp},  // GT
+		{name: "FGreaterEqual", argLength: 1, reg: crgp}, // GT || EQ
+
+		// The 750CL has no GPR<->FPR moves and no fcfid/fctidz, so these go
+		// through an 8-byte stack slot (aux) and use F31 as a temporary.
+		{name: "CVTWD", argLength: 1, reg: gpfp, aux: "Sym", symEffect: "RdWr"},  // int32 -> float64
+		{name: "CVTWUD", argLength: 1, reg: gpfp, aux: "Sym", symEffect: "RdWr"}, // uint32 -> float64
+		{name: "CVTDW", argLength: 1, reg: fpgp, aux: "Sym", symEffect: "RdWr"},  // float64 (or float32) -> int32, truncating
+		{name: "FMOVSconst", argLength: 0, reg: fp01, aux: "Float32", asm: "FMOVS", rematerializeable: true, earlyOk: true}, // auxint as float64, converted to float32
+		{name: "FMOVDconst", argLength: 0, reg: fp01, aux: "Float64", asm: "FMOVD", rematerializeable: true, earlyOk: true}, // auxint as float64
+		{name: "FMOVSload", argLength: 2, reg: fpload, aux: "SymOff", asm: "FMOVS", typ: "Float32", faultOnNilArg0: true, symEffect: "Read", addrSinkArg0: true},
+		{name: "FMOVDload", argLength: 2, reg: fpload, aux: "SymOff", asm: "FMOVD", typ: "Float64", faultOnNilArg0: true, symEffect: "Read", addrSinkArg0: true},
+		{name: "FMOVSstore", argLength: 3, reg: fpstore, aux: "SymOff", asm: "FMOVS", typ: "Mem", faultOnNilArg0: true, symEffect: "Write", addrSinkArg0: true},
+		{name: "FMOVDstore", argLength: 3, reg: fpstore, aux: "SymOff", asm: "FMOVD", typ: "Mem", faultOnNilArg0: true, symEffect: "Write", addrSinkArg0: true},
 
 		// moves
 		{name: "MOVWconst", argLength: 0, reg: gp01, aux: "Int32", asm: "MOVW", typ: "UInt32", rematerializeable: true, earlyOk: true},    // auxint
