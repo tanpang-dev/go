@@ -3301,6 +3301,8 @@ func (b *Builder) gccArchArgs() []string {
 		}
 	case "arm":
 		return []string{"-marm"} // not thumb
+	case "ppc":
+		return []string{"-m32"}
 	case "s390x":
 		// minimum supported s390x version on Go is z13
 		return []string{"-m64", "-march=z13"}

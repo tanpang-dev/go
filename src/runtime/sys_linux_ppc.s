@@ -370,9 +370,13 @@ TEXT runtime·sigfwd(SB),NOSPLIT,$0-16
 // Called by the kernel with R3=sig, R4=info, R5=ctx and LR pointing at the
 // vdso sigreturn trampoline. The kernel restores every register from the
 // signal frame on return, so nothing needs to be saved here.
-// ponytail: assumes R30 already holds g (no cgo); load_g is the cgo upgrade.
 TEXT runtime·sigtramp(SB),NOSPLIT|TOPFRAME,$16
 	MOVW	$0, R0
+	// The signal may arrive in C code, where R30 is not g.
+	MOVBZ	runtime·iscgo(SB), R6
+	CMP	R6, $0
+	BEQ	2(PC)
+	BL	runtime·load_g(SB)
 	MOVW	R3, FIXED_FRAME+0(R1)
 	MOVW	R4, FIXED_FRAME+4(R1)
 	MOVW	R5, FIXED_FRAME+8(R1)

@@ -3,7 +3,6 @@
 // license that can be found in the LICENSE file.
 
 // Package ppc is the linker backend for 32-bit big-endian PowerPC.
-// Only internal linking of static executables is supported.
 package ppc
 
 import (

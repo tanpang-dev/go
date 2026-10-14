@@ -34,11 +34,22 @@ TEXT runtime·rt0_go(SB),NOSPLIT|TOPFRAME,$0
 	MOVD	R3, (g_stack+stack_lo)(g)
 	MOVD	R1, (g_stack+stack_hi)(g)
 
-	// cgo is not supported on linux/ppc yet.
+	// if there is a _cgo_init, call it using the gcc ABI.
 	MOVD	_cgo_init(SB), R12
 	CMP	R12, $0
 	BEQ	nocgo
-	BL	runtime·abort(SB)
+	MOVD	R12, CTR
+	MOVD	R1, R14	// callee-saved in C
+	SUB	$16, R1
+	RLWNM	$0, R1, $~15, R1
+	MOVW	R0, 0(R1)	// back chain
+	MOVD	g, R3	// arg 0: G
+	MOVD	$setg_gcc<>(SB), R4	// arg 1: setg
+	MOVW	R0, R5	// arg 2: not used
+	MOVW	R0, R6	// arg 3: not used
+	BL	(CTR)
+	MOVW	$0, R0
+	MOVD	R14, R1
 
 nocgo:
 	// update stackguard after _cgo_init
@@ -494,9 +505,139 @@ g0:
 	RET
 
 // cgocallback(fn, frame unsafe.Pointer, ctxt uintptr)
-// cgo is not supported on linux/ppc yet.
-TEXT ·cgocallback(SB),NOSPLIT,$0-12
-	BL	runtime·abort(SB)
+// See cgocall.go for more details.
+// Locals: savedsp at 8(R1) (unwindm reads it at sched.sp+8), savedm at 12(R1).
+TEXT ·cgocallback(SB),NOSPLIT,$12-12
+	NO_LOCAL_POINTERS
+
+	// Skip cgocallbackg, just dropm when fn is nil, and frame is the saved g.
+	// It is used to dropm while thread is exiting.
+	MOVW	fn+0(FP), R5
+	CMP	R5, $0
+	BNE	loadg
+	// Restore the g from frame.
+	MOVW	frame+4(FP), g
+	BR	dropm
+
+loadg:
+	// Load m and g from thread-local storage.
+	MOVBZ	runtime·iscgo(SB), R4
+	CMP	R4, $0
+	BEQ	nocgo
+	BL	runtime·load_g(SB)
+nocgo:
+
+	// If g is nil, Go did not create the current thread,
+	// or if this thread never called into Go on pthread platforms.
+	// Call needm to obtain one for temporary use.
+	CMP	g, $0
+	BEQ	needm
+
+	MOVW	g_m(g), R3
+	MOVW	R3, 12(R1)	// savedm
+	BR	havem
+
+needm:
+	MOVW	g, 12(R1)	// g is zero, so is m.
+	MOVW	$runtime·needAndBindM(SB), R12
+	MOVW	R12, CTR
+	BL	(CTR)
+
+	// Set m->sched.sp = SP, so that if a panic happens
+	// during the function we are about to execute, it will
+	// have a valid SP to run on the g0 stack.
+	MOVW	g_m(g), R3
+	MOVW	m_g0(R3), R4
+	MOVW	R1, (g_sched+gobuf_sp)(R4)
+
+havem:
+	// Now there's a valid m, and we're running on its m->g0.
+	// Save current m->g0->sched.sp on stack and then set it to SP.
+	MOVW	m_g0(R3), R4
+	MOVW	(g_sched+gobuf_sp)(R4), R6
+	MOVW	R6, 8(R1)	// savedsp
+	MOVW	R1, (g_sched+gobuf_sp)(R4)
+
+	// Switch to m->curg stack and call runtime.cgocallbackg, with
+	// m->curg->sched.pc pushed as the "saved LR" of a frame the same
+	// size as this one so tracebacks continue into the earlier calls.
+	MOVW	m_curg(R3), g
+	BL	runtime·save_g(SB)
+	MOVW	(g_sched+gobuf_sp)(g), R6
+	MOVW	(g_sched+gobuf_pc)(g), R7
+	MOVW	R7, -(12+FIXED_FRAME)(R6)	// "saved LR"; must match frame size
+	// Gather our arguments before leaving this stack.
+	MOVW	fn+0(FP), R5
+	MOVW	frame+4(FP), R8
+	MOVW	ctxt+8(FP), R9
+	ADD	$-(12+FIXED_FRAME), R6
+	OR	R6, R6, R1	// switch stack; a plain move keeps the assembler's SP delta intact
+	MOVW	R5, FIXED_FRAME+0(R1)
+	MOVW	R8, FIXED_FRAME+4(R1)
+	MOVW	R9, FIXED_FRAME+8(R1)
+	BL	runtime·cgocallbackg(SB)
+
+	// Restore g->sched (== m->curg->sched) from saved values.
+	MOVW	0(R1), R7
+	MOVW	R7, (g_sched+gobuf_pc)(g)
+	ADD	$(12+FIXED_FRAME), R1, R6
+	MOVW	R6, (g_sched+gobuf_sp)(g)
+
+	// Switch back to m->g0's stack and restore m->g0->sched.sp.
+	MOVW	g_m(g), R3
+	MOVW	m_g0(R3), g
+	BL	runtime·save_g(SB)
+	MOVW	(g_sched+gobuf_sp)(g), R1
+	MOVW	8(R1), R6	// savedsp
+	MOVW	R6, (g_sched+gobuf_sp)(g)
+
+	// If the m on entry was nil, we called needm above to borrow an m.
+	// Keep it for the next call when a pthread key has been created.
+	MOVW	12(R1), R3	// savedm
+	CMP	R3, $0
+	BNE	droppedm
+	MOVW	_cgo_pthread_key_created(SB), R3
+	CMP	R3, $0
+	BEQ	dropm
+	MOVW	(R3), R3
+	CMP	R3, $0
+	BNE	droppedm
+
+dropm:
+	MOVW	$runtime·dropm(SB), R12
+	MOVW	R12, CTR
+	BL	(CTR)
+droppedm:
+
+	// Done!
+	RET
+
+// Called from cgo wrappers, this function returns g->m->curg.stack.hi.
+// Must obey the gcc calling convention: g and R31 are callee-save there.
+TEXT _cgo_topofstack(SB),NOSPLIT|NOFRAME,$0
+	MOVD	LR, R4
+	MOVD	R31, R5
+	MOVD	g, R6
+	BL	runtime·load_g(SB)
+	MOVD	g_m(g), R3
+	MOVD	m_curg(R3), R3
+	MOVD	(g_stack+stack_hi)(R3), R3
+	MOVD	R6, g
+	MOVD	R5, R31
+	MOVD	R4, LR
+	RET
+
+// setg_gcc is called from C with g in R3. It only records g in TLS:
+// g (R30) and R31 are callee-saved in the C ABI, so put them back.
+TEXT setg_gcc<>(SB),NOSPLIT|NOFRAME,$0-0
+	MOVD	LR, R4
+	MOVD	R31, R5
+	MOVD	g, R6
+	MOVD	R3, g
+	BL	runtime·save_g(SB)
+	MOVD	R6, g
+	MOVD	R5, R31
+	MOVD	R4, LR
 	RET
 
 // void setg(G*); set g. for use by needm.

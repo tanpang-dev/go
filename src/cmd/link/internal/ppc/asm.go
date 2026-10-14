@@ -5,6 +5,8 @@
 package ppc
 
 import (
+	"debug/elf"
+
 	"cmd/internal/objabi"
 	"cmd/internal/sys"
 	"cmd/link/internal/ld"
@@ -14,9 +16,35 @@ import (
 
 func gentext(ctxt *ld.Link, ldr *loader.Loader) {}
 
-// External linking is not supported yet.
 func elfreloc1(ctxt *ld.Link, out *ld.OutBuf, ldr *loader.Loader, s loader.Sym, r loader.ExtReloc, ri int, sectoff int64) bool {
-	return false
+	elfsym := ld.ElfSymForReloc(ctxt, r.Xsym)
+	rela := func(t elf.R_PPC, off, add int64) {
+		out.Write32(uint32(off))
+		out.Write32(uint32(elfsym)<<8 | uint32(t))
+		out.Write32(uint32(add))
+	}
+	// The 16-bit immediates of a big-endian instruction pair sit at +2 and +6.
+	switch r.Type {
+	default:
+		return false
+	case objabi.R_ADDR, objabi.R_DWARFSECREF:
+		if r.Size != 4 {
+			return false
+		}
+		rela(elf.R_PPC_ADDR32, sectoff, r.Xadd)
+	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS:
+		rela(elf.R_PPC_ADDR16_HA, sectoff+2, r.Xadd)
+		rela(elf.R_PPC_ADDR16_LO, sectoff+6, r.Xadd)
+	case objabi.R_POWER_TLS_LE:
+		rela(elf.R_PPC_TPREL16_HA, sectoff+2, r.Xadd)
+		rela(elf.R_PPC_TPREL16_LO, sectoff+6, r.Xadd)
+	case objabi.R_CALLPOWER:
+		if r.Size != 4 {
+			return false
+		}
+		rela(elf.R_PPC_REL24, sectoff, r.Xadd)
+	}
+	return true
 }
 
 func elfsetupplt(ctxt *ld.Link, ldr *loader.Loader, plt, gotplt *loader.SymbolBuilder, dynamic loader.Sym) {}
@@ -35,6 +63,13 @@ func pack(o1, o2 uint32) int64          { return int64(o1)<<32 | int64(o2) }
 
 func archreloc(target *ld.Target, ldr *loader.Loader, syms *ld.ArchSyms, r loader.Reloc, s loader.Sym, val int64) (int64, int, bool) {
 	if target.IsExternal() {
+		// RELA: the addend lives in the relocation, leave the instructions alone.
+		switch r.Type() {
+		case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS, objabi.R_POWER_TLS_LE:
+			return val, 2, true
+		case objabi.R_CALLPOWER:
+			return val, 1, true
+		}
 		return val, 0, false
 	}
 	rs := r.Sym()
@@ -77,5 +112,11 @@ func archrelocvariant(*ld.Target, *loader.Loader, loader.Reloc, sym.RelocVariant
 }
 
 func extreloc(target *ld.Target, ldr *loader.Loader, r loader.Reloc, s loader.Sym) (loader.ExtReloc, bool) {
+	switch r.Type() {
+	case objabi.R_POWER_TLS_LE, objabi.R_CALLPOWER:
+		return ld.ExtrelocSimple(ldr, r), true
+	case objabi.R_ADDRPOWER, objabi.R_ADDRPOWER_DS:
+		return ld.ExtrelocViaOuterSym(ldr, r, s), true
+	}
 	return loader.ExtReloc{}, false
 }
