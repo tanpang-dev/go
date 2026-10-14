@@ -222,12 +222,79 @@ TEXT runtime·mincore(SB),NOSPLIT|NOFRAME,$0-16
 	MOVW	R3, ret+12(FP)
 	RET
 
+// vdsoCall calls the VDSO function in R12 with the C arguments in R3 and R4
+// and leaves its result in R3. Like the arm version it switches to the g0
+// stack (the VDSO's stack needs are unknown), records vdsoPC/vdsoSP for
+// SIGPROF tracebacks and, without cgo, parks g at the bottom of the signal
+// stack so sigFetchG can find it if a signal lands inside the VDSO.
+// Clobbers R15-R18 (callee-saved in C, so they survive the call).
+TEXT vdsoCall<>(SB),NOSPLIT,$16-0
+	MOVD	R1, R15	// our SP
+	MOVD	g_m(g), R16
+
+	// Save the old vdsoPC/vdsoSP so this is reentrant.
+	MOVD	m_vdsoPC(R16), R17
+	MOVW	R17, FIXED_FRAME+0(R1)
+	MOVD	m_vdsoSP(R16), R17
+	MOVW	R17, FIXED_FRAME+4(R1)
+	MOVD	LR, R17
+	MOVD	R17, m_vdsoPC(R16)
+	ADD	$(16+FIXED_FRAME), R1, R17	// caller's SP
+	MOVD	R17, m_vdsoSP(R16)
+
+	MOVD	m_curg(R16), R17
+	CMP	g, R17	// Only switch if on curg.
+	BNE	noswitch
+	MOVD	m_g0(R16), R17
+	MOVD	(g_sched+gobuf_sp)(R17), R1
+noswitch:
+	SUB	$32, R1
+	RLWNM	$0, R1, $~15, R1	// SysV wants 16-byte alignment
+	MOVW	R0, 0(R1)	// back chain
+
+	MOVD	R0, R18
+	MOVBZ	runtime·iscgo(SB), R17
+	CMP	R17, $0
+	BNE	call
+	MOVD	m_gsignal(R16), R17
+	CMP	R17, $0
+	BEQ	call
+	CMP	g, R17	// already on the signal stack: no nested signal
+	BEQ	call
+	MOVD	(g_stack+stack_lo)(R17), R18
+	CMP	R18, $0
+	BEQ	call
+	MOVD	g, 0(R18)
+call:
+	MOVD	R12, CTR
+	BL	(CTR)
+	MOVW	$0, R0	// C code may clobber R0
+	CMP	R18, $0
+	BEQ	2(PC)
+	MOVW	R0, 0(R18)	// clear the g slot
+
+	MOVD	R15, R1
+	MOVW	FIXED_FRAME+4(R1), R17
+	MOVD	R17, m_vdsoSP(R16)
+	MOVW	FIXED_FRAME+0(R1), R17
+	MOVD	R17, m_vdsoPC(R16)
+	RET
+
+// clock_gettime64 / __kernel_clock_gettime64 fill a __kernel_timespec:
+// two big-endian int64s.
+
 // func walltime() (sec int64, nsec int32)
-// clock_gettime64 fills a __kernel_timespec: two big-endian int64s.
 TEXT runtime·walltime(SB),NOSPLIT,$16-12
 	MOVW	$0, R3	// CLOCK_REALTIME
 	ADD	$FIXED_FRAME, R1, R4
+	MOVW	runtime·vdsoClockgettimeSym(SB), R12
+	CMP	R12, $0
+	BEQ	wallsys
+	BL	vdsoCall<>(SB)
+	BR	wallok
+wallsys:
 	SYSCALL	$SYS_clock_gettime64
+wallok:
 	MOVW	FIXED_FRAME+0(R1), R5	// sec high
 	MOVW	FIXED_FRAME+4(R1), R6	// sec low
 	MOVW	FIXED_FRAME+12(R1), R7	// nsec (low word)
@@ -240,7 +307,14 @@ TEXT runtime·walltime(SB),NOSPLIT,$16-12
 TEXT runtime·nanotime1(SB),NOSPLIT,$16-8
 	MOVW	$1, R3	// CLOCK_MONOTONIC
 	ADD	$FIXED_FRAME, R1, R4
+	MOVW	runtime·vdsoClockgettimeSym(SB), R12
+	CMP	R12, $0
+	BEQ	nanosys
+	BL	vdsoCall<>(SB)
+	BR	nanook
+nanosys:
 	SYSCALL	$SYS_clock_gettime64
+nanook:
 	MOVW	FIXED_FRAME+0(R1), R5	// sec high
 	MOVW	FIXED_FRAME+4(R1), R6	// sec low
 	MOVW	FIXED_FRAME+12(R1), R7	// nsec
