@@ -643,6 +643,17 @@ TEXT _cgo_topofstack(SB),NOSPLIT|NOFRAME,$0
 	MOVD	R4, LR
 	RET
 
+// Called from the module's init_array stub with the C ABI and its
+// moduledata in R3. R31 is callee-saved there, and with -dynlink the
+// symbol accesses below use it as REGTMP.
+TEXT runtime·addmoduledata(SB),NOSPLIT|NOFRAME,$0-0
+	MOVW	R31, R10
+	MOVW	runtime·lastmoduledatap(SB), R4
+	MOVW	R3, moduledata_next(R4)
+	MOVW	R3, runtime·lastmoduledatap(SB)
+	MOVW	R10, R31
+	RET
+
 // setg_gcc is called from C with g in R3. It only records g in TLS:
 // g (R30) and R31 are callee-saved in the C ABI, so put them back.
 TEXT setg_gcc<>(SB),NOSPLIT|NOFRAME,$0-0

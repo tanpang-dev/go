@@ -220,6 +220,12 @@ func (s *LSym) setFIPSType(ctxt *Link) {
 		return
 	}
 
+	// ppc32 -dynlink pointer slots (see ppc64/ppc32.go) are filled in by the
+	// dynamic linker, like a GOT, so they stay out of the checksummed data.
+	if strings.HasPrefix(s.Name, "GOT32.") {
+		return
+	}
+
 	if s.Attribute.Static() {
 		// Static (file-scoped) symbol does not have name prefix,
 		// but must be local to package; rely on whether package is FIPS.

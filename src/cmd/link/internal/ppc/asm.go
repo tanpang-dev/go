@@ -14,7 +14,55 @@ import (
 	"cmd/link/internal/sym"
 )
 
-func gentext(ctxt *ld.Link, ldr *loader.Loader) {}
+func gentext(ctxt *ld.Link, ldr *loader.Loader) {
+	if ctxt.DynlinkingGo() {
+		genaddmoduledata(ctxt, ldr)
+	}
+}
+
+// genaddmoduledata writes the init_array function that registers this
+// module: runtime.addmoduledata(local.moduledata), as a C-ABI tail call.
+// runtime.addmoduledata may be in another module, so it is reached through a
+// pointer the dynamic linker binds rather than a PLT stub (those want the GOT
+// pointer in r30, which is g in Go code).
+func genaddmoduledata(ctxt *ld.Link, ldr *loader.Loader) {
+	initfunc, addmoduledata := ld.PrepareAddmoduledata(ctxt)
+	if initfunc == nil {
+		return
+	}
+	// A plugin's own addmoduledata joins Textp after deadcode; its GOT32
+	// pointers are referenced from nowhere else.
+	relocs := ldr.Relocs(addmoduledata)
+	for i := 0; i < relocs.Count(); i++ {
+		ldr.SetAttrReachable(relocs.At(i).Sym(), true)
+	}
+	tgt := ldr.Lookup("local.moduledata", 0)
+	if tgt == 0 {
+		tgt = ldr.Lookup("local.pluginmoduledata", 0)
+	}
+	if tgt == 0 {
+		tgt = ldr.LookupOrCreateSym("runtime.firstmoduledata", 0)
+	}
+	ptr := ldr.CreateSymForUpdate("go:link.addmoduledataptr", 0)
+	ptr.SetType(sym.SNOPTRDATA)
+	ptr.SetLocal(true)
+	ptr.AddAddr(ctxt.Arch, addmoduledata)
+
+	o := func(op uint32) { initfunc.AddUint32(ctxt.Arch, op) }
+	o(0x7c0802a6) // mflr r0
+	o(0x429f0005) // bcl 20,31,1f
+	o(0x7d8802a6) // 1: mflr r12
+	o(0x7c0803a6) // mtlr r0
+	// R_ADDRPOWER_PCREL is relative to the addis; 1b is 8 and 16 bytes back.
+	sz := initfunc.AddSymRef(ctxt.Arch, tgt, 8, objabi.R_ADDRPOWER_PCREL, 8)
+	initfunc.SetUint32(ctxt.Arch, sz-8, 0x3c6c0000) // addis r3, r12, (tgt-1b)@ha
+	initfunc.SetUint32(ctxt.Arch, sz-4, 0x38630000) // addi r3, r3, (tgt-1b)@l
+	sz = initfunc.AddSymRef(ctxt.Arch, ptr.Sym(), 16, objabi.R_ADDRPOWER_PCREL, 8)
+	initfunc.SetUint32(ctxt.Arch, sz-8, 0x3d8c0000) // addis r12, r12, (ptr-1b)@ha
+	initfunc.SetUint32(ctxt.Arch, sz-4, 0x818c0000) // lwz r12, (ptr-1b)@l(r12)
+	o(0x7d8903a6) // mtctr r12
+	o(0x4e800420) // bctr
+}
 
 // debug/elf does not name these (binutils include/elf/ppc.h).
 const (

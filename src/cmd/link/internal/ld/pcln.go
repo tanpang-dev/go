@@ -143,6 +143,13 @@ func computeDeferReturn(ctxt *Link, deferReturnSym, s loader.Sym) uint32 {
 			// R_ADDR relocation on the ARESUMEPOINT.
 			lastWasmAddr = uint32(r.Add())
 		}
+		if target.Arch.Family == sys.PPC && r.Type() == objabi.R_ADDRPOWER_PCREL && ldr.SymName(r.Sym()) == "GOT32.runtime.deferreturn" {
+			// -dynlink calls deferreturn through its GOT32 pointer: the
+			// call sequence starts with a 20-byte PC fetch before this
+			// addis (see cmd/internal/obj/ppc64/ppc32.go).
+			deferreturn = uint32(r.Off()) - 20
+			break
+		}
 		if r.Type().IsDirectCall() && (r.Sym() == deferReturnSym || ldr.IsDeferReturnTramp(r.Sym())) {
 			if target.IsWasm() {
 				deferreturn = lastWasmAddr - 1

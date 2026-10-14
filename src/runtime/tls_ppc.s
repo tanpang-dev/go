@@ -12,17 +12,12 @@
 // SIGSEGV, and our runtime.sigtramp don't even know we
 // are in external code, and will continue to use R30,
 // this might well result in another SIGSEGV.
-// TLS is relative to R2, the 32-bit SysV thread pointer.
-//
-// With -shared (pie, c-archive, c-shared) local-exec TLS is not allowed, so g
-// lives in runtime/cgo's initial-exec __thread slot x_cgo_tls_g (gcc_unix.c), whose offset
-// from R2 x_cgo_inittls stores in tls_g_off. That only happens with cgo, and
-// without cgo save_g/load_g are never needed.
-#ifdef GOBUILDMODE_shared
+// g lives in runtime/cgo's initial-exec __thread slot x_cgo_tls_g
+// (gcc_unix.c), whose offset from R2 (the 32-bit SysV thread pointer)
+// x_cgo_inittls stores in tls_g_off. Every build mode uses the same slot, so
+// a plugin's copy of the runtime agrees with its host's. Without cgo,
+// save_g/load_g are never needed.
 #define TLS_G(r)	MOVW	runtime·tls_g_off(SB), r; ADD	R2, r
-#else
-#define TLS_G(r)	MOVD	runtime·tls_g(SB), r
-#endif
 
 // If !iscgo, this is a no-op.
 //
@@ -46,5 +41,4 @@ TEXT runtime·load_g(SB),NOSPLIT|NOFRAME,$0-0
 	MOVD	0(R31), g
 	RET
 
-GLOBL runtime·tls_g+0(SB), TLSBSS+DUPOK, $4
 GLOBL runtime·tls_g_off(SB), NOPTR, $4

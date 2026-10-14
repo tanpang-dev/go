@@ -620,6 +620,9 @@ func span9(ctxt *obj.Link, cursym *obj.LSym, newprog obj.ProgAlloc) {
 	c := ctxt9{ctxt: ctxt, newprog: newprog, cursym: cursym, autosize: int32(p.To.Offset)}
 
 	if isPPC32(ctxt) {
+		if ctxt.Flag_dynlink {
+			c.expandCalls32()
+		}
 		for q := p.Link; q != nil; q = q.Link {
 			fixPPC32(ctxt, q)
 		}

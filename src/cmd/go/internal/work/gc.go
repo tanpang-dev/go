@@ -375,15 +375,6 @@ func asmArgs(a *Action, p *load.Package) []any {
 			}
 		}
 	}
-	if p.ImportPath == "runtime" && cfg.Goarch == "ppc" {
-		// ppc reaches g through a different TLS slot in position-independent code.
-		for _, arg := range forcedAsmflags {
-			if arg == "-shared" || arg == "-dynlink" {
-				args = append(args, "-D=GOBUILDMODE_shared=1")
-				break
-			}
-		}
-	}
 
 	if p.Standard {
 		args = append(args, "-std")

@@ -8,7 +8,7 @@
 #include "libcgo_unix.h"
 
 #if defined(__powerpc__) && !defined(__powerpc64__)
-// 32-bit PowerPC: g lives here in -shared builds (see runtime/tls_ppc.s).
+// 32-bit PowerPC: g lives here whenever cgo is used (see runtime/tls_ppc.s).
 // Initial-exec keeps it at one offset from the thread pointer (r2) in every
 // thread. Defined in this file so that c-archive links always pull it in.
 __thread void *x_cgo_tls_g __attribute__((tls_model("initial-exec")));

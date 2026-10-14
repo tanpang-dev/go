@@ -1,0 +1,6 @@
+carchive*
+cshared
+dltest
+lib.a
+lib.h
+libgo.*
