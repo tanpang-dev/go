@@ -2,3 +2,4 @@ tailscale/
 *.gz
 tailscaled
 tailscale-cli
+tailscaled-small
