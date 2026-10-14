@@ -1,0 +1,11 @@
+BenchmarkMemmove4K           	   58710	      5929 ns/op	 690.87 MB/s
+BenchmarkMemclr4K            	   60818	      5943 ns/op	 689.17 MB/s
+BenchmarkEqual4K             	   12109	     29885 ns/op	 137.06 MB/s
+BenchmarkIndexByte4K         	    7675	     56438 ns/op	  72.58 MB/s
+BenchmarkFib20               	     336	   1126606 ns/op
+BenchmarkSortInts1K          	     549	    825433 ns/op
+BenchmarkJSONRoundTrip       	       1	 776476871 ns/op
+BenchmarkSHA256_1K           	    1917	    179463 ns/op	   5.71 MB/s
+BenchmarkChaCha20Poly1305_1K 	    1506	    259579 ns/op	   3.94 MB/s
+BenchmarkTimeNow             	  171132	      2276 ns/op
+BenchmarkFloatMath           	   77784	      4092 ns/op

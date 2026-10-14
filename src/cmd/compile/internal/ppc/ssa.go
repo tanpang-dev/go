@@ -157,7 +157,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		ssaop.OpPPCNOR, ssaop.OpPPCMUL:
 		// to = arg0 op arg1 (SUB: to = Reg - From)
 		rr(s, v.Op.Asm(), v.Args[1].Reg(), v.Args[0].Reg(), v.Reg())
-	case ssaop.OpPPCSLL, ssaop.OpPPCSRL, ssaop.OpPPCSRA:
+	case ssaop.OpPPCSLL, ssaop.OpPPCSRL, ssaop.OpPPCSRA, ssaop.OpPPCROTLW:
 		// The rules only use these with amounts below 32, where PowerPC's
 		// 6-bit shift amount agrees with MIPS's mod-32 one.
 		rr(s, v.Op.Asm(), v.Args[1].Reg(), v.Args[0].Reg(), v.Reg())
@@ -181,7 +181,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		}
 		rc(s, ppc64.AMOVW, int64(int32(c)), 0, ppc64.REGTMP)
 		rr(s, v.Op.Asm(), ppc64.REGTMP, v.Args[0].Reg(), v.Reg())
-	case ssaop.OpPPCSLLconst, ssaop.OpPPCSRLconst, ssaop.OpPPCSRAconst:
+	case ssaop.OpPPCSLLconst, ssaop.OpPPCSRLconst, ssaop.OpPPCSRAconst, ssaop.OpPPCROTLWconst:
 		rc(s, v.Op.Asm(), v.AuxInt&31, v.Args[0].Reg(), v.Reg())
 
 	case ssaop.OpPPCMULT, ssaop.OpPPCMULTU:
@@ -230,6 +230,11 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		// arg0 > 0
 		cmpConst(s, v.Op == ssaop.OpPPCSGTUzero, v.Args[0].Reg(), 0)
 		crBit(s, 1, v.Reg())
+
+	case ssaop.OpPPCCMPW, ssaop.OpPPCCMPWU:
+		cmpReg(s, v.Op == ssaop.OpPPCCMPWU, v.Args[0].Reg(), v.Args[1].Reg())
+	case ssaop.OpPPCCMPWconst, ssaop.OpPPCCMPWUconst:
+		cmpConst(s, v.Op == ssaop.OpPPCCMPWUconst, v.Args[0].Reg(), v.AuxInt)
 
 	case ssaop.OpPPCMOVWconst:
 		rc(s, ppc64.AMOVW, int64(int32(v.AuxInt)), 0, v.Reg())
@@ -533,6 +538,14 @@ var blockJump = map[block.BlockKind]struct {
 	block.BlockPPCGEZ: {ppc64.ABGE, ppc64.ABLT},
 	block.BlockPPCLEZ: {ppc64.ABLE, ppc64.ABGT},
 	block.BlockPPCGTZ: {ppc64.ABGT, ppc64.ABLE},
+
+	// CR0 blocks (control is a CMPW* value)
+	block.BlockPPCCEQ: {ppc64.ABEQ, ppc64.ABNE},
+	block.BlockPPCCNE: {ppc64.ABNE, ppc64.ABEQ},
+	block.BlockPPCCLT: {ppc64.ABLT, ppc64.ABGE},
+	block.BlockPPCCGE: {ppc64.ABGE, ppc64.ABLT},
+	block.BlockPPCCLE: {ppc64.ABLE, ppc64.ABGT},
+	block.BlockPPCCGT: {ppc64.ABGT, ppc64.ABLE},
 }
 
 func ssaGenBlock(s *ssagen.State, b, next *ssa.Block) {
@@ -549,36 +562,49 @@ func ssaGenBlock(s *ssagen.State, b, next *ssa.Block) {
 	case block.BlockPPCEQ, block.BlockPPCNE,
 		block.BlockPPCLTZ, block.BlockPPCGEZ,
 		block.BlockPPCLEZ, block.BlockPPCGTZ:
-		jmp := blockJump[b.Kind]
 		cmpConst(s, false, b.Controls[0].Reg(), 0)
-		switch next {
-		case b.Succs[0].Block():
-			s.Br(jmp.invasm, b.Succs[1].Block())
-		case b.Succs[1].Block():
-			s.Br(jmp.asm, b.Succs[0].Block())
-		default:
-			if b.Likely != ssa.BranchUnlikely {
-				s.Br(jmp.asm, b.Succs[0].Block())
-				s.Br(obj.AJMP, b.Succs[1].Block())
-			} else {
-				s.Br(jmp.invasm, b.Succs[1].Block())
-				s.Br(obj.AJMP, b.Succs[0].Block())
-			}
-		}
+		brBlock(s, b, next)
+	case block.BlockPPCCEQ, block.BlockPPCCNE,
+		block.BlockPPCCLT, block.BlockPPCCGE,
+		block.BlockPPCCLE, block.BlockPPCCGT:
+		// CR0 was set by the control value.
+		brBlock(s, b, next)
 	case block.BlockPPCJUMPTABLE:
-		// SLW $2, idx, Rtmp; ADD tbl, Rtmp; MOVWZ (Rtmp), Rtmp; MOVD Rtmp, CTR; BR (CTR)
-		rc(s, ppc64.ASLW, 2, b.Controls[0].Reg(), ppc64.REGTMP)
-		rr(s, ppc64.AADD, b.Controls[1].Reg(), ppc64.REGTMP, ppc64.REGTMP)
-		p := s.Prog(ppc64.AMOVWZ)
-		p.From.Type = obj.TYPE_MEM
-		p.From.Reg = ppc64.REGTMP
-		reg(&p.To, ppc64.REGTMP)
-		rr(s, ppc64.AMOVD, ppc64.REGTMP, 0, ppc64.REG_CTR)
-		p = s.Prog(obj.AJMP)
-		reg(&p.To, ppc64.REG_CTR)
-		// Save jump tables for later resolution of the target blocks.
-		s.JumpTables = append(s.JumpTables, b)
+		jumpTable(s, b)
 	default:
 		b.Fatalf("branch not implemented: %s", b.LongString())
 	}
+}
+
+func brBlock(s *ssagen.State, b, next *ssa.Block) {
+	jmp := blockJump[b.Kind]
+	switch next {
+	case b.Succs[0].Block():
+		s.Br(jmp.invasm, b.Succs[1].Block())
+	case b.Succs[1].Block():
+		s.Br(jmp.asm, b.Succs[0].Block())
+	default:
+		if b.Likely != ssa.BranchUnlikely {
+			s.Br(jmp.asm, b.Succs[0].Block())
+			s.Br(obj.AJMP, b.Succs[1].Block())
+		} else {
+			s.Br(jmp.invasm, b.Succs[1].Block())
+			s.Br(obj.AJMP, b.Succs[0].Block())
+		}
+	}
+}
+
+func jumpTable(s *ssagen.State, b *ssa.Block) {
+	// SLW $2, idx, Rtmp; ADD tbl, Rtmp; MOVWZ (Rtmp), Rtmp; MOVD Rtmp, CTR; BR (CTR)
+	rc(s, ppc64.ASLW, 2, b.Controls[0].Reg(), ppc64.REGTMP)
+	rr(s, ppc64.AADD, b.Controls[1].Reg(), ppc64.REGTMP, ppc64.REGTMP)
+	p := s.Prog(ppc64.AMOVWZ)
+	p.From.Type = obj.TYPE_MEM
+	p.From.Reg = ppc64.REGTMP
+	reg(&p.To, ppc64.REGTMP)
+	rr(s, ppc64.AMOVD, ppc64.REGTMP, 0, ppc64.REG_CTR)
+	p = s.Prog(obj.AJMP)
+	reg(&p.To, ppc64.REG_CTR)
+	// Save jump tables for later resolution of the target blocks.
+	s.JumpTables = append(s.JumpTables, b)
 }

@@ -22,6 +22,7 @@ import (
 	"cmd/compile/internal/ssa/rewrite/mips64"
 	"cmd/compile/internal/ssa/rewrite/mips64latelower"
 	"cmd/compile/internal/ssa/rewrite/ppc"
+	"cmd/compile/internal/ssa/rewrite/ppclatelower"
 	"cmd/compile/internal/ssa/rewrite/ppc64"
 	"cmd/compile/internal/ssa/rewrite/ppc64latelower"
 	"cmd/compile/internal/ssa/rewrite/riscv64"
@@ -216,6 +217,8 @@ func newConfig(arch string, types ssa.Types, ctxt *obj.Link, optimize, softfloat
 		c.RegSize = 4
 		c.LowerBlock = ppc.RewriteBlock
 		c.LowerValue = ppc.RewriteValue
+		c.LateLowerBlock = ppclatelower.RewriteBlock
+		c.LateLowerValue = ppclatelower.RewriteValue
 		c.Registers = registersPPC[:]
 		c.GpRegMask = gpRegMaskPPC
 		c.FpRegMask = fpRegMaskPPC

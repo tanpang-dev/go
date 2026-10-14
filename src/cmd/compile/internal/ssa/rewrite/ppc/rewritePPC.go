@@ -305,6 +305,8 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpPPCOR(v)
 	case ssaop.OpPPCORconst:
 		return rewriteValue_OpPPCORconst(v)
+	case ssaop.OpPPCROTLW:
+		return rewriteValue_OpPPCROTLW(v)
 	case ssaop.OpPPCSGT:
 		return rewriteValue_OpPPCSGT(v)
 	case ssaop.OpPPCSGTU:
@@ -583,46 +585,34 @@ func rewriteValue_OpBitLen8(v *ssa.Value) bool {
 }
 func rewriteValue_OpCom16(v *ssa.Value) bool {
 	v_0 := v.Args[0]
-	b := v.Block
-	typ := &b.Func.Config.Types
 	// match: (Com16 x)
-	// result: (NOR (MOVWconst [0]) x)
+	// result: (NOR x x)
 	for {
 		x := v_0
 		v.Reset(ssaop.OpPPCNOR)
-		v0 := b.NewValue0(v.Pos, ssaop.OpPPCMOVWconst, typ.UInt32)
-		v0.AuxInt = ssa.Int32ToAuxInt(0)
-		v.AddArg2(v0, x)
+		v.AddArg2(x, x)
 		return true
 	}
 }
 func rewriteValue_OpCom32(v *ssa.Value) bool {
 	v_0 := v.Args[0]
-	b := v.Block
-	typ := &b.Func.Config.Types
 	// match: (Com32 x)
-	// result: (NOR (MOVWconst [0]) x)
+	// result: (NOR x x)
 	for {
 		x := v_0
 		v.Reset(ssaop.OpPPCNOR)
-		v0 := b.NewValue0(v.Pos, ssaop.OpPPCMOVWconst, typ.UInt32)
-		v0.AuxInt = ssa.Int32ToAuxInt(0)
-		v.AddArg2(v0, x)
+		v.AddArg2(x, x)
 		return true
 	}
 }
 func rewriteValue_OpCom8(v *ssa.Value) bool {
 	v_0 := v.Args[0]
-	b := v.Block
-	typ := &b.Func.Config.Types
 	// match: (Com8 x)
-	// result: (NOR (MOVWconst [0]) x)
+	// result: (NOR x x)
 	for {
 		x := v_0
 		v.Reset(ssaop.OpPPCNOR)
-		v0 := b.NewValue0(v.Pos, ssaop.OpPPCMOVWconst, typ.UInt32)
-		v0.AuxInt = ssa.Int32ToAuxInt(0)
-		v.AddArg2(v0, x)
+		v.AddArg2(x, x)
 		return true
 	}
 }
@@ -4314,6 +4304,24 @@ func rewriteValue_OpPPCORconst(v *ssa.Value) bool {
 	}
 	return false
 }
+func rewriteValue_OpPPCROTLW(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (ROTLW x (MOVWconst [c]))
+	// result: (ROTLWconst x [c&31])
+	for {
+		x := v_0
+		if v_1.Op != ssaop.OpPPCMOVWconst {
+			break
+		}
+		c := ssa.AuxIntToInt32(v_1.AuxInt)
+		v.Reset(ssaop.OpPPCROTLWconst)
+		v.AuxInt = ssa.Int32ToAuxInt(c & 31)
+		v.AddArg(x)
+		return true
+	}
+	return false
+}
 func rewriteValue_OpPPCSGT(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -5007,30 +5015,28 @@ func rewriteValue_OpRotateLeft16(v *ssa.Value) bool {
 func rewriteValue_OpRotateLeft32(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
-	b := v.Block
-	typ := &b.Func.Config.Types
-	// match: (RotateLeft32 <t> x (MOVWconst [c]))
-	// result: (Or32 (Lsh32x32 <t> x (MOVWconst [c&31])) (Rsh32Ux32 <t> x (MOVWconst [-c&31])))
+	// match: (RotateLeft32 x (MOVWconst [c]))
+	// result: (ROTLWconst [c&31] x)
 	for {
-		t := v.Type
 		x := v_0
 		if v_1.Op != ssaop.OpPPCMOVWconst {
 			break
 		}
 		c := ssa.AuxIntToInt32(v_1.AuxInt)
-		v.Reset(ssaop.OpOr32)
-		v0 := b.NewValue0(v.Pos, ssaop.OpLsh32x32, t)
-		v1 := b.NewValue0(v.Pos, ssaop.OpPPCMOVWconst, typ.UInt32)
-		v1.AuxInt = ssa.Int32ToAuxInt(c & 31)
-		v0.AddArg2(x, v1)
-		v2 := b.NewValue0(v.Pos, ssaop.OpRsh32Ux32, t)
-		v3 := b.NewValue0(v.Pos, ssaop.OpPPCMOVWconst, typ.UInt32)
-		v3.AuxInt = ssa.Int32ToAuxInt(-c & 31)
-		v2.AddArg2(x, v3)
-		v.AddArg2(v0, v2)
+		v.Reset(ssaop.OpPPCROTLWconst)
+		v.AuxInt = ssa.Int32ToAuxInt(c & 31)
+		v.AddArg(x)
 		return true
 	}
-	return false
+	// match: (RotateLeft32 x y)
+	// result: (ROTLW x y)
+	for {
+		x := v_0
+		y := v_1
+		v.Reset(ssaop.OpPPCROTLW)
+		v.AddArg2(x, y)
+		return true
+	}
 }
 func rewriteValue_OpRotateLeft64(v *ssa.Value) bool {
 	v_1 := v.Args[1]

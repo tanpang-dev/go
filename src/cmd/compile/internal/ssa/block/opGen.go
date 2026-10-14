@@ -124,6 +124,12 @@ const (
 	BlockPPCGTZ
 	BlockPPCGEZ
 	BlockPPCJUMPTABLE
+	BlockPPCCEQ
+	BlockPPCCNE
+	BlockPPCCLT
+	BlockPPCCLE
+	BlockPPCCGT
+	BlockPPCCGE
 
 	BlockPPC64EQ
 	BlockPPC64NE
@@ -292,6 +298,12 @@ var blockString = [...]string{
 	BlockPPCGTZ:       "GTZ",
 	BlockPPCGEZ:       "GEZ",
 	BlockPPCJUMPTABLE: "JUMPTABLE",
+	BlockPPCCEQ:       "CEQ",
+	BlockPPCCNE:       "CNE",
+	BlockPPCCLT:       "CLT",
+	BlockPPCCLE:       "CLE",
+	BlockPPCCGT:       "CGT",
+	BlockPPCCGE:       "CGE",
 
 	BlockPPC64EQ:  "EQ",
 	BlockPPC64NE:  "NE",

@@ -113,6 +113,8 @@ func init() {
 		gpload   = regInfo{inputs: []regMask{gpspsbg}, outputs: []regMask{gp}}
 		gpstore  = regInfo{inputs: []regMask{gpspsbg, gpg}}
 		gpstore0 = regInfo{inputs: []regMask{gpspsbg}}
+		gp2cr    = regInfo{inputs: []regMask{gpg, gpg}}
+		gp1cr    = regInfo{inputs: []regMask{gpg}}
 	)
 	ops := []opData{
 		{name: "ADD", argLength: 2, reg: gp21, asm: "ADD", commutative: true, earlyOk: true},                           // arg0 + arg1
@@ -122,12 +124,12 @@ func init() {
 		{name: "MUL", argLength: 2, reg: gp21, asm: "MULLW", commutative: true, earlyOk: true},                            // arg0 * arg1
 		{name: "MULT", argLength: 2, reg: gp22, resultNotInArgs: true, commutative: true, typ: "(Int32,Int32)", earlyOk: true},     // arg0 * arg1, signed, results high,low
 		{name: "MULTU", argLength: 2, reg: gp22, resultNotInArgs: true, commutative: true, typ: "(UInt32,UInt32)", earlyOk: true}, // arg0 * arg1, unsigned, results high,low
-		{name: "DIV", argLength: 2, reg: gp22, resultNotInArgs: true, typ: "(Int32,Int32)"},                                        // arg0 / arg1, signed, results arg0%arg1,arg0/arg1
-		{name: "DIVU", argLength: 2, reg: gp22, resultNotInArgs: true, typ: "(UInt32,UInt32)"},                                    // arg0 / arg1, signed, results arg0%arg1,arg0/arg1
+		{name: "DIV", argLength: 2, reg: gp22, resultNotInArgs: true, typ: "(Int32,Int32)", clobberFlags: true},                                        // arg0 / arg1, signed, results arg0%arg1,arg0/arg1
+		{name: "DIVU", argLength: 2, reg: gp22, resultNotInArgs: true, typ: "(UInt32,UInt32)", clobberFlags: true},                                    // arg0 / arg1, signed, results arg0%arg1,arg0/arg1
 
 
 		{name: "AND", argLength: 2, reg: gp21, asm: "AND", commutative: true, earlyOk: true},                // arg0 & arg1
-		{name: "ANDconst", argLength: 1, reg: gp11, asm: "AND", aux: "Int32", earlyOk: true},                // arg0 & auxInt
+		{name: "ANDconst", argLength: 1, reg: gp11, asm: "AND", aux: "Int32", earlyOk: true, clobberFlags: true},                // arg0 & auxInt
 		{name: "OR", argLength: 2, reg: gp21, asm: "OR", commutative: true, earlyOk: true},                  // arg0 | arg1
 		{name: "ORconst", argLength: 1, reg: gp11, asm: "OR", aux: "Int32", earlyOk: true},                  // arg0 | auxInt
 		{name: "XOR", argLength: 2, reg: gp21, asm: "XOR", commutative: true, typ: "UInt32", earlyOk: true}, // arg0 ^ arg1
@@ -144,16 +146,26 @@ func init() {
 		{name: "SRA", argLength: 2, reg: gp21, asm: "SRAW", earlyOk: true},                    // arg0 >> arg1, signed, shift amount is mod 32
 		{name: "SRAconst", argLength: 1, reg: gp11, asm: "SRAW", aux: "Int32", earlyOk: true}, // arg0 >> auxInt, signed, shift amount must be 0 through 31 inclusive
 
+		// rotates (rlwnm uses the low 5 bits of the amount, so it is mod 32)
+		{name: "ROTLW", argLength: 2, reg: gp21, asm: "ROTLW", earlyOk: true},                    // arg0 rotated left by arg1
+		{name: "ROTLWconst", argLength: 1, reg: gp11, asm: "ROTLW", aux: "Int32", earlyOk: true}, // arg0 rotated left by auxInt
+
 		{name: "CLZ", argLength: 1, reg: gp11, asm: "CNTLZW", earlyOk: true},
 
 		// comparisons
-		{name: "SGT", argLength: 2, reg: gp21, typ: "Bool", earlyOk: true},                      // 1 if arg0 > arg1 (signed), 0 otherwise
-		{name: "SGTconst", argLength: 1, reg: gp11, aux: "Int32", typ: "Bool", earlyOk: true},   // 1 if auxInt > arg0 (signed), 0 otherwise
-		{name: "SGTzero", argLength: 1, reg: gp11, typ: "Bool", earlyOk: true},                  // 1 if arg0 > 0 (signed), 0 otherwise
-		{name: "SGTU", argLength: 2, reg: gp21, typ: "Bool", earlyOk: true},                    // 1 if arg0 > arg1 (unsigned), 0 otherwise
-		{name: "SGTUconst", argLength: 1, reg: gp11, aux: "Int32", typ: "Bool", earlyOk: true}, // 1 if auxInt > arg0 (unsigned), 0 otherwise
-		{name: "SGTUzero", argLength: 1, reg: gp11, typ: "Bool", earlyOk: true},                // 1 if arg0 > 0 (unsigned), 0 otherwise
+		{name: "SGT", argLength: 2, reg: gp21, typ: "Bool", earlyOk: true, clobberFlags: true},                      // 1 if arg0 > arg1 (signed), 0 otherwise
+		{name: "SGTconst", argLength: 1, reg: gp11, aux: "Int32", typ: "Bool", earlyOk: true, clobberFlags: true},   // 1 if auxInt > arg0 (signed), 0 otherwise
+		{name: "SGTzero", argLength: 1, reg: gp11, typ: "Bool", earlyOk: true, clobberFlags: true},                  // 1 if arg0 > 0 (signed), 0 otherwise
+		{name: "SGTU", argLength: 2, reg: gp21, typ: "Bool", earlyOk: true, clobberFlags: true},                    // 1 if arg0 > arg1 (unsigned), 0 otherwise
+		{name: "SGTUconst", argLength: 1, reg: gp11, aux: "Int32", typ: "Bool", earlyOk: true, clobberFlags: true}, // 1 if auxInt > arg0 (unsigned), 0 otherwise
+		{name: "SGTUzero", argLength: 1, reg: gp11, typ: "Bool", earlyOk: true, clobberFlags: true},                // 1 if arg0 > 0 (unsigned), 0 otherwise
 
+
+		// compares into CR0, used only by the CR-branch blocks (see PPClatelower.rules)
+		{name: "CMPW", argLength: 2, reg: gp2cr, asm: "CMPW", typ: "Flags"},                         // signed compare arg0 to arg1
+		{name: "CMPWU", argLength: 2, reg: gp2cr, asm: "CMPWU", typ: "Flags"},                       // unsigned compare arg0 to arg1
+		{name: "CMPWconst", argLength: 1, reg: gp1cr, asm: "CMPW", aux: "Int32", typ: "Flags"},     // signed compare arg0 to auxInt (16-bit)
+		{name: "CMPWUconst", argLength: 1, reg: gp1cr, asm: "CMPWU", aux: "Int32", typ: "Flags"},   // unsigned compare arg0 to auxInt (16-bit)
 
 		// moves
 		{name: "MOVWconst", argLength: 0, reg: gp01, aux: "Int32", asm: "MOVW", typ: "UInt32", rematerializeable: true, earlyOk: true},    // auxint
@@ -187,8 +199,8 @@ func init() {
 
 		// conditional move on zero (returns arg1 if arg2 is 0, otherwise arg0)
 		// order of parameters is reversed so we can use resultInArg0 (OpCMOVZ result arg1 arg2-> CMOVZ arg2reg, arg1reg, resultReg)
-		{name: "CMOVZ", argLength: 3, reg: gp31, resultInArg0: true, earlyOk: true},
-		{name: "CMOVZzero", argLength: 2, reg: regInfo{inputs: []regMask{gp, gpg}, outputs: []regMask{gp}}, resultInArg0: true, earlyOk: true},
+		{name: "CMOVZ", argLength: 3, reg: gp31, resultInArg0: true, earlyOk: true, clobberFlags: true},
+		{name: "CMOVZzero", argLength: 2, reg: regInfo{inputs: []regMask{gp, gpg}, outputs: []regMask{gp}}, resultInArg0: true, earlyOk: true, clobberFlags: true},
 
 
 		// function calls
@@ -274,6 +286,7 @@ func init() {
 				inputs:   []regMask{buildReg("R3"), gp},
 				clobbers: buildReg("R3"),
 			},
+			clobberFlags:   true,
 			faultOnNilArg0: true,
 			addrSinkArg0:   true,
 			addrSinkArg1:   true,
@@ -300,6 +313,7 @@ func init() {
 				inputs:   []regMask{buildReg("R3"), buildReg("R4"), gp},
 				clobbers: buildReg("R3 R4"),
 			},
+			clobberFlags:   true,
 			faultOnNilArg0: true,
 			faultOnNilArg1: true,
 			addrSinkArg0:   true,
@@ -362,6 +376,14 @@ func init() {
 		// control[0] is the index into the jump table.
 		// control[1] is the address of the jump table (the address of the symbol stored in Aux).
 		{name: "JUMPTABLE", controls: 2, aux: "Sym"},
+
+		// branches on CR0, control is a CMPW* value
+		{name: "CEQ", controls: 1},
+		{name: "CNE", controls: 1},
+		{name: "CLT", controls: 1},
+		{name: "CLE", controls: 1},
+		{name: "CGT", controls: 1},
+		{name: "CGE", controls: 1},
 	}
 
 	archs = append(archs, arch{

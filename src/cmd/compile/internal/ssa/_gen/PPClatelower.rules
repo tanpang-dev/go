@@ -1,0 +1,36 @@
+// Copyright 2026 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Branch on CR0 directly instead of materializing a 0/1 value and comparing
+// it with zero. This runs after lowering, so the controls are final PPC ops.
+
+// arg0 > arg1
+(NE (SGT  x y) yes no) => (CGT (CMPW  x y) yes no)
+(EQ (SGT  x y) yes no) => (CLE (CMPW  x y) yes no)
+(NE (SGTU x y) yes no) => (CGT (CMPWU x y) yes no)
+(EQ (SGTU x y) yes no) => (CLE (CMPWU x y) yes no)
+
+// auxInt > arg0, i.e. arg0 < auxInt
+(NE (SGTconst  [c] x) yes no) && ssa.Is16Bit(int64(c))  => (CLT (CMPWconst  [c] x) yes no)
+(EQ (SGTconst  [c] x) yes no) && ssa.Is16Bit(int64(c))  => (CGE (CMPWconst  [c] x) yes no)
+(NE (SGTUconst [c] x) yes no) && uint32(c) <= 0xffff   => (CLT (CMPWUconst [c] x) yes no)
+(EQ (SGTUconst [c] x) yes no) && uint32(c) <= 0xffff   => (CGE (CMPWUconst [c] x) yes no)
+(NE (SGTconst  [c] x) yes no) => (CLT (CMPW  x (MOVWconst [c])) yes no)
+(EQ (SGTconst  [c] x) yes no) => (CGE (CMPW  x (MOVWconst [c])) yes no)
+(NE (SGTUconst [c] x) yes no) => (CLT (CMPWU x (MOVWconst [c])) yes no)
+(EQ (SGTUconst [c] x) yes no) => (CGE (CMPWU x (MOVWconst [c])) yes no)
+
+// arg0 > 0, arg0 != 0
+(NE (SGTzero  x) yes no) => (CGT (CMPWconst [0] x) yes no)
+(EQ (SGTzero  x) yes no) => (CLE (CMPWconst [0] x) yes no)
+(NE (SGTUzero x) yes no) => (CNE (CMPWconst [0] x) yes no)
+(EQ (SGTUzero x) yes no) => (CEQ (CMPWconst [0] x) yes no)
+
+// Everything else compares the control register with zero.
+(EQ  x yes no) => (CEQ (CMPWconst [0] x) yes no)
+(NE  x yes no) => (CNE (CMPWconst [0] x) yes no)
+(LTZ x yes no) => (CLT (CMPWconst [0] x) yes no)
+(LEZ x yes no) => (CLE (CMPWconst [0] x) yes no)
+(GTZ x yes no) => (CGT (CMPWconst [0] x) yes no)
+(GEZ x yes no) => (CGE (CMPWconst [0] x) yes no)

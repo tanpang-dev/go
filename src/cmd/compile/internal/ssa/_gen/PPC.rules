@@ -120,13 +120,14 @@
 // rotates
 (RotateLeft8  <t> x (MOVWconst [c])) => (Or8  (Lsh8x32 <t>  x (MOVWconst [c&7]))  (Rsh8Ux32 <t> x (MOVWconst [-c&7])))
 (RotateLeft16 <t> x (MOVWconst [c])) => (Or16 (Lsh16x32 <t> x (MOVWconst [c&15])) (Rsh16Ux32 <t> x (MOVWconst [-c&15])))
-(RotateLeft32 <t> x (MOVWconst [c])) => (Or32 (Lsh32x32 <t> x (MOVWconst [c&31])) (Rsh32Ux32 <t> x (MOVWconst [-c&31])))
+(RotateLeft32 x (MOVWconst [c])) => (ROTLWconst [c&31] x)
+(RotateLeft32 x y) => (ROTLW x y)
 (RotateLeft64 <t> x (MOVWconst [c])) => (Or64 (Lsh64x32 <t> x (MOVWconst [c&63])) (Rsh64Ux32 <t> x (MOVWconst [-c&63])))
 
 // unary ops
 (Neg(32|16|8) ...) => (NEG ...)
 
-(Com(32|16|8) x) => (NOR (MOVWconst [0]) x)
+(Com(32|16|8) x) => (NOR x x)
 
 (Ctz(32|16|8)NonZero ...) => (Ctz32 ...)
 
@@ -509,6 +510,7 @@
 (XOR x (MOVWconst [c])) => (XORconst [c] x)
 
 (SLL x (MOVWconst [c])) => (SLLconst x [c&31])
+(ROTLW x (MOVWconst [c])) => (ROTLWconst x [c&31])
 (SRL x (MOVWconst [c])) => (SRLconst x [c&31])
 (SRA x (MOVWconst [c])) => (SRAconst x [c&31])
 

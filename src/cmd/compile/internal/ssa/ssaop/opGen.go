@@ -5845,6 +5845,8 @@ const (
 	OpPPCSRLconst
 	OpPPCSRA
 	OpPPCSRAconst
+	OpPPCROTLW
+	OpPPCROTLWconst
 	OpPPCCLZ
 	OpPPCSGT
 	OpPPCSGTconst
@@ -5852,6 +5854,10 @@ const (
 	OpPPCSGTU
 	OpPPCSGTUconst
 	OpPPCSGTUzero
+	OpPPCCMPW
+	OpPPCCMPWU
+	OpPPCCMPWconst
+	OpPPCCMPWUconst
 	OpPPCMOVWconst
 	OpPPCMOVWaddr
 	OpPPCMOVBload
@@ -97880,6 +97886,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:            "DIV",
 		ArgLen:          2,
 		ResultNotInArgs: true,
+		ClobberFlags:    true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -97895,6 +97902,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:            "DIVU",
 		ArgLen:          2,
 		ResultNotInArgs: true,
+		ClobberFlags:    true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -97923,11 +97931,12 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "ANDconst",
-		AuxType: AuxTypeInt32,
-		ArgLen:  1,
-		EarlyOk: true,
-		asm:     ppc64.AAND,
+		Name:         "ANDconst",
+		AuxType:      AuxTypeInt32,
+		ArgLen:       1,
+		ClobberFlags: true,
+		EarlyOk:      true,
+		asm:          ppc64.AAND,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98119,6 +98128,36 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
+		Name:    "ROTLW",
+		ArgLen:  2,
+		EarlyOk: true,
+		asm:     ppc64.AROTLW,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+				{1, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+			},
+			Outputs: []OutputInfo{
+				{0, RegMask{V1: 1073733624, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29
+			},
+		},
+	},
+	{
+		Name:    "ROTLWconst",
+		AuxType: AuxTypeInt32,
+		ArgLen:  1,
+		EarlyOk: true,
+		asm:     ppc64.AROTLW,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+			},
+			Outputs: []OutputInfo{
+				{0, RegMask{V1: 1073733624, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29
+			},
+		},
+	},
+	{
 		Name:    "CLZ",
 		ArgLen:  1,
 		EarlyOk: true,
@@ -98133,9 +98172,10 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGT",
-		ArgLen:  2,
-		EarlyOk: true,
+		Name:         "SGT",
+		ArgLen:       2,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98147,10 +98187,11 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGTconst",
-		AuxType: AuxTypeInt32,
-		ArgLen:  1,
-		EarlyOk: true,
+		Name:         "SGTconst",
+		AuxType:      AuxTypeInt32,
+		ArgLen:       1,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98161,9 +98202,10 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGTzero",
-		ArgLen:  1,
-		EarlyOk: true,
+		Name:         "SGTzero",
+		ArgLen:       1,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98174,9 +98216,10 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGTU",
-		ArgLen:  2,
-		EarlyOk: true,
+		Name:         "SGTU",
+		ArgLen:       2,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98188,10 +98231,11 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGTUconst",
-		AuxType: AuxTypeInt32,
-		ArgLen:  1,
-		EarlyOk: true,
+		Name:         "SGTUconst",
+		AuxType:      AuxTypeInt32,
+		ArgLen:       1,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
@@ -98202,15 +98246,60 @@ var OpcodeTable = [...]OpInfo{
 		},
 	},
 	{
-		Name:    "SGTUzero",
-		ArgLen:  1,
-		EarlyOk: true,
+		Name:         "SGTUzero",
+		ArgLen:       1,
+		ClobberFlags: true,
+		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
 				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
 			},
 			Outputs: []OutputInfo{
 				{0, RegMask{V1: 1073733624, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29
+			},
+		},
+	},
+	{
+		Name:   "CMPW",
+		ArgLen: 2,
+		asm:    ppc64.ACMPW,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+				{1, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+			},
+		},
+	},
+	{
+		Name:   "CMPWU",
+		ArgLen: 2,
+		asm:    ppc64.ACMPWU,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+				{1, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+			},
+		},
+	},
+	{
+		Name:    "CMPWconst",
+		AuxType: AuxTypeInt32,
+		ArgLen:  1,
+		asm:     ppc64.ACMPW,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
+			},
+		},
+	},
+	{
+		Name:    "CMPWUconst",
+		AuxType: AuxTypeInt32,
+		ArgLen:  1,
+		asm:     ppc64.ACMPWU,
+		Reg: RegInfo{
+			Inputs: []InputInfo{
+				{0, RegMask{V1: 2147475448, V2: 0}}, // R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R14 R15 R16 R17 R18 R19 R20 R21 R22 R23 R24 R25 R26 R27 R28 R29 g
 			},
 		},
 	},
@@ -98504,6 +98593,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:         "CMOVZ",
 		ArgLen:       3,
 		ResultInArg0: true,
+		ClobberFlags: true,
 		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
@@ -98520,6 +98610,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:         "CMOVZzero",
 		ArgLen:       2,
 		ResultInArg0: true,
+		ClobberFlags: true,
 		EarlyOk:      true,
 		Reg: RegInfo{
 			Inputs: []InputInfo{
@@ -98597,6 +98688,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:           "LoweredZero",
 		AuxType:        AuxTypeInt32,
 		ArgLen:         3,
+		ClobberFlags:   true,
 		FaultOnNilArg0: true,
 		AddrSinkArg0:   true,
 		AddrSinkArg1:   true,
@@ -98612,6 +98704,7 @@ var OpcodeTable = [...]OpInfo{
 		Name:           "LoweredMove",
 		AuxType:        AuxTypeInt32,
 		ArgLen:         4,
+		ClobberFlags:   true,
 		FaultOnNilArg0: true,
 		FaultOnNilArg1: true,
 		AddrSinkArg0:   true,

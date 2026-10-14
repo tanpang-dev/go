@@ -1,0 +1,34 @@
+stress 失敗 0/20
+BenchmarkMemmove4K           	   47812	      7688 ns/op	 532.79 MB/s
+BenchmarkMemmove4K           	   47414	      7423 ns/op	 551.80 MB/s
+BenchmarkMemmove4K           	   42668	      7411 ns/op	 552.66 MB/s
+BenchmarkMemclr4K            	   60602	      8347 ns/op	 490.70 MB/s
+BenchmarkMemclr4K            	   38480	      8940 ns/op	 458.18 MB/s
+BenchmarkMemclr4K            	   43940	      8764 ns/op	 467.36 MB/s
+BenchmarkEqual4K             	    8534	     42140 ns/op	  97.20 MB/s
+BenchmarkEqual4K             	    8858	     42265 ns/op	  96.91 MB/s
+BenchmarkEqual4K             	    9122	     40133 ns/op	 102.06 MB/s
+BenchmarkIndexByte4K         	    6254	     50865 ns/op	  80.53 MB/s
+BenchmarkIndexByte4K         	    7442	     48425 ns/op	  84.59 MB/s
+BenchmarkIndexByte4K         	    7137	     72884 ns/op	  56.20 MB/s
+BenchmarkFib20               	     393	    894274 ns/op
+BenchmarkFib20               	     430	    863404 ns/op
+BenchmarkFib20               	     381	    981626 ns/op
+BenchmarkSortInts1K          	     954	    417577 ns/op
+BenchmarkSortInts1K          	     850	    377149 ns/op
+BenchmarkSortInts1K          	     822	    394538 ns/op
+BenchmarkJSONRoundTrip       	       1	 544808488 ns/op
+BenchmarkJSONRoundTrip       	    2442	    146064 ns/op
+BenchmarkJSONRoundTrip       	    3896	     89292 ns/op
+BenchmarkSHA256_1K           	    3763	     93028 ns/op	  11.01 MB/s
+BenchmarkSHA256_1K           	    3919	     93706 ns/op	  10.93 MB/s
+BenchmarkSHA256_1K           	    3427	    107218 ns/op	   9.55 MB/s
+BenchmarkChaCha20Poly1305_1K 	    3591	     92157 ns/op	  11.11 MB/s
+BenchmarkChaCha20Poly1305_1K 	    3891	     92146 ns/op	  11.11 MB/s
+BenchmarkChaCha20Poly1305_1K 	    3642	     93412 ns/op	  10.96 MB/s
+BenchmarkTimeNow             	  209173	      1505 ns/op
+BenchmarkTimeNow             	  216226	      1503 ns/op
+BenchmarkTimeNow             	  248841	      1515 ns/op
+BenchmarkFloatMath           	   92038	      3913 ns/op
+BenchmarkFloatMath           	   92113	      4518 ns/op
+BenchmarkFloatMath           	   82948	      3920 ns/op
