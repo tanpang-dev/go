@@ -97,7 +97,8 @@ func (c *sigctxt) pushCall(targetPC, resumePC uintptr) {
 	*(*uint32)(unsafe.Pointer(uintptr(sp))) = c.link()
 	// Set up PC and LR to pretend the function being signaled
 	// calls targetPC at resumePC.
+	// Unlike ppc64 there is no TOC, so R12 need not hold the entry point
+	// (and must not be clobbered: it may be live at the resume PC).
 	c.set_link(uint32(resumePC))
-	c.set_r12(uint32(targetPC))
 	c.set_pc(uint32(targetPC))
 }

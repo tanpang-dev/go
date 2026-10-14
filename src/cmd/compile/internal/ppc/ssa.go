@@ -353,9 +353,15 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 	case ssaop.OpPPCCALLstatic:
 		s.Call(v)
 	case ssaop.OpPPCCALLclosure, ssaop.OpPPCCALLinter:
-		rr(s, ppc64.AMOVD, v.Args[0].Reg(), 0, ppc64.REG_CTR)
+		// Call through LR like ppc64: asyncPreempt preserves LR but uses CTR.
+		rr(s, ppc64.AMOVD, v.Args[0].Reg(), 0, ppc64.REG_LR)
 		pp := s.Call(v)
-		pp.To.Reg = ppc64.REG_CTR
+		pp.As = ppc64.ABCL
+		pp.From.Type = obj.TYPE_CONST
+		pp.From.Offset = ppc64.BO_ALWAYS
+		pp.Reg = ppc64.REG_CR0LT // The preferred value if BI is ignored.
+		pp.To.Reg = ppc64.REG_LR
+		pp.AddRestSourceConst(1)
 	case ssaop.OpPPCCALLtail, ssaop.OpPPCCALLtailinter:
 		// obj9 moves a register target into CTR for the tail branch.
 		s.TailCall(v)
