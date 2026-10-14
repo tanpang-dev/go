@@ -284,6 +284,13 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 	case ssaop.OpPPCFADDS, ssaop.OpPPCFADD, ssaop.OpPPCFSUBS, ssaop.OpPPCFSUB,
 		ssaop.OpPPCFMULS, ssaop.OpPPCFMUL, ssaop.OpPPCFDIVS, ssaop.OpPPCFDIV:
 		rr(s, v.Op.Asm(), v.Args[1].Reg(), v.Args[0].Reg(), v.Reg())
+	case ssaop.OpPPCFMADD, ssaop.OpPPCFMADDS, ssaop.OpPPCFMSUB, ssaop.OpPPCFMSUBS:
+		// r = arg0*arg1 ± arg2
+		p := s.Prog(v.Op.Asm())
+		reg(&p.From, v.Args[0].Reg())
+		p.Reg = v.Args[2].Reg()
+		p.AddRestSourceReg(v.Args[1].Reg())
+		reg(&p.To, v.Reg())
 	case ssaop.OpPPCFNEG, ssaop.OpPPCFABS, ssaop.OpPPCFRSP:
 		rr(s, v.Op.Asm(), v.Args[0].Reg(), 0, v.Reg())
 	case ssaop.OpPPCFCMPU:

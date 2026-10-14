@@ -151,6 +151,7 @@ func init() {
 		fp11     = regInfo{inputs: []regMask{fp}, outputs: []regMask{fp}}
 		fp21     = regInfo{inputs: []regMask{fp, fp}, outputs: []regMask{fp}}
 		fp2cr    = regInfo{inputs: []regMask{fp, fp}}
+		fp31     = regInfo{inputs: []regMask{fp, fp, fp}, outputs: []regMask{fp}}
 		fpload   = regInfo{inputs: []regMask{gpspsbg}, outputs: []regMask{fp}}
 		fpstore  = regInfo{inputs: []regMask{gpspsbg, fp}}
 		gpfp     = regInfo{inputs: []regMask{gp}, outputs: []regMask{fp}}
@@ -217,6 +218,10 @@ func init() {
 		{name: "FMUL", argLength: 2, reg: fp21, asm: "FMUL", commutative: true, earlyOk: true},   // arg0 * arg1
 		{name: "FDIVS", argLength: 2, reg: fp21, asm: "FDIVS", earlyOk: true},                    // arg0 / arg1 (float32)
 		{name: "FDIV", argLength: 2, reg: fp21, asm: "FDIV", earlyOk: true},                      // arg0 / arg1
+		{name: "FMADD", argLength: 3, reg: fp31, asm: "FMADD", earlyOk: true},   // arg0*arg1 + arg2, fused
+		{name: "FMADDS", argLength: 3, reg: fp31, asm: "FMADDS", earlyOk: true}, // arg0*arg1 + arg2, fused (float32)
+		{name: "FMSUB", argLength: 3, reg: fp31, asm: "FMSUB", earlyOk: true},   // arg0*arg1 - arg2, fused
+		{name: "FMSUBS", argLength: 3, reg: fp31, asm: "FMSUBS", earlyOk: true}, // arg0*arg1 - arg2, fused (float32)
 		{name: "FNEG", argLength: 1, reg: fp11, asm: "FNEG", earlyOk: true},                      // -arg0
 		{name: "FABS", argLength: 1, reg: fp11, asm: "FABS", earlyOk: true},                      // abs(arg0)
 		{name: "FRSP", argLength: 1, reg: fp11, asm: "FRSP", earlyOk: true},                      // round arg0 to float32

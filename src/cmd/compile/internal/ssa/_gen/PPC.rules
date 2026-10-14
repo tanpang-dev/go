@@ -678,3 +678,8 @@
 (FMOV(S|D)store [off1] {sym1} (MOVWaddr [off2] {sym2} ptr) val mem) && ssa.CanMergeSym(sym1,sym2) =>
 	(FMOV(S|D)store [off1+off2] {ssa.MergeSym(sym1,sym2)} ptr val mem)
 (FMOV(S|D)load [off] {sym} ptr (FMOV(S|D)store [off2] {sym2} ptr2 x _)) && sym == sym2 && off == off2 && ssa.IsSamePtr(ptr, ptr2) => x
+
+// Fused multiply-add (fmadd/fmsub are fused on the 750CL).
+(FMA ...) => (FMADD ...)
+(F(ADD|SUB) (FMUL x y) z) && x.Block.Func.UseFMA(v) => (FM(ADD|SUB) x y z)
+(F(ADDS|SUBS) (FMULS x y) z) && x.Block.Func.UseFMA(v) => (FM(ADDS|SUBS) x y z)

@@ -143,6 +143,9 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpEqB(v)
 	case ssaop.OpEqPtr:
 		return rewriteValue_OpEqPtr(v)
+	case ssaop.OpFMA:
+		v.Op = ssaop.OpPPCFMADD
+		return true
 	case ssaop.OpGetCallerPC:
 		v.Op = ssaop.OpPPCLoweredGetCallerPC
 		return true
@@ -318,6 +321,10 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpPPCCMOVZ(v)
 	case ssaop.OpPPCCMOVZzero:
 		return rewriteValue_OpPPCCMOVZzero(v)
+	case ssaop.OpPPCFADD:
+		return rewriteValue_OpPPCFADD(v)
+	case ssaop.OpPPCFADDS:
+		return rewriteValue_OpPPCFADDS(v)
 	case ssaop.OpPPCFMOVDload:
 		return rewriteValue_OpPPCFMOVDload(v)
 	case ssaop.OpPPCFMOVDstore:
@@ -326,6 +333,10 @@ func RewriteValue(v *ssa.Value) bool {
 		return rewriteValue_OpPPCFMOVSload(v)
 	case ssaop.OpPPCFMOVSstore:
 		return rewriteValue_OpPPCFMOVSstore(v)
+	case ssaop.OpPPCFSUB:
+		return rewriteValue_OpPPCFSUB(v)
+	case ssaop.OpPPCFSUBS:
+		return rewriteValue_OpPPCFSUBS(v)
 	case ssaop.OpPPCLoweredPanicBoundsRC:
 		return rewriteValue_OpPPCLoweredPanicBoundsRC(v)
 	case ssaop.OpPPCLoweredPanicBoundsRR:
@@ -2904,6 +2915,66 @@ func rewriteValue_OpPPCCMOVZzero(v *ssa.Value) bool {
 	}
 	return false
 }
+func rewriteValue_OpPPCFADD(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FADD (FMUL x y) z)
+	// cond: x.Block.Func.UseFMA(v)
+	// result: (FMADD x y z)
+	for {
+		for _i0 := 0; _i0 <= 1; _i0, v_0, v_1 = _i0+1, v_1, v_0 {
+			if v_0.Op != ssaop.OpPPCFMUL {
+				continue
+			}
+			_ = v_0.Args[1]
+			v_0_0 := v_0.Args[0]
+			v_0_1 := v_0.Args[1]
+			for _i1 := 0; _i1 <= 1; _i1, v_0_0, v_0_1 = _i1+1, v_0_1, v_0_0 {
+				x := v_0_0
+				y := v_0_1
+				z := v_1
+				if !(x.Block.Func.UseFMA(v)) {
+					continue
+				}
+				v.Reset(ssaop.OpPPCFMADD)
+				v.AddArg3(x, y, z)
+				return true
+			}
+		}
+		break
+	}
+	return false
+}
+func rewriteValue_OpPPCFADDS(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FADDS (FMULS x y) z)
+	// cond: x.Block.Func.UseFMA(v)
+	// result: (FMADDS x y z)
+	for {
+		for _i0 := 0; _i0 <= 1; _i0, v_0, v_1 = _i0+1, v_1, v_0 {
+			if v_0.Op != ssaop.OpPPCFMULS {
+				continue
+			}
+			_ = v_0.Args[1]
+			v_0_0 := v_0.Args[0]
+			v_0_1 := v_0.Args[1]
+			for _i1 := 0; _i1 <= 1; _i1, v_0_0, v_0_1 = _i1+1, v_0_1, v_0_0 {
+				x := v_0_0
+				y := v_0_1
+				z := v_1
+				if !(x.Block.Func.UseFMA(v)) {
+					continue
+				}
+				v.Reset(ssaop.OpPPCFMADDS)
+				v.AddArg3(x, y, z)
+				return true
+			}
+		}
+		break
+	}
+	return false
+}
 func rewriteValue_OpPPCFMOVDload(v *ssa.Value) bool {
 	v_1 := v.Args[1]
 	v_0 := v.Args[0]
@@ -3143,6 +3214,62 @@ func rewriteValue_OpPPCFMOVSstore(v *ssa.Value) bool {
 		v.Aux = ssa.SymToAux(ssa.MergeSym(sym1, sym2))
 		v.AddArg3(ptr, val, mem)
 		return true
+	}
+	return false
+}
+func rewriteValue_OpPPCFSUB(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FSUB (FMUL x y) z)
+	// cond: x.Block.Func.UseFMA(v)
+	// result: (FMSUB x y z)
+	for {
+		if v_0.Op != ssaop.OpPPCFMUL {
+			break
+		}
+		_ = v_0.Args[1]
+		v_0_0 := v_0.Args[0]
+		v_0_1 := v_0.Args[1]
+		for _i0 := 0; _i0 <= 1; _i0, v_0_0, v_0_1 = _i0+1, v_0_1, v_0_0 {
+			x := v_0_0
+			y := v_0_1
+			z := v_1
+			if !(x.Block.Func.UseFMA(v)) {
+				continue
+			}
+			v.Reset(ssaop.OpPPCFMSUB)
+			v.AddArg3(x, y, z)
+			return true
+		}
+		break
+	}
+	return false
+}
+func rewriteValue_OpPPCFSUBS(v *ssa.Value) bool {
+	v_1 := v.Args[1]
+	v_0 := v.Args[0]
+	// match: (FSUBS (FMULS x y) z)
+	// cond: x.Block.Func.UseFMA(v)
+	// result: (FMSUBS x y z)
+	for {
+		if v_0.Op != ssaop.OpPPCFMULS {
+			break
+		}
+		_ = v_0.Args[1]
+		v_0_0 := v_0.Args[0]
+		v_0_1 := v_0.Args[1]
+		for _i0 := 0; _i0 <= 1; _i0, v_0_0, v_0_1 = _i0+1, v_0_1, v_0_0 {
+			x := v_0_0
+			y := v_0_1
+			z := v_1
+			if !(x.Block.Func.UseFMA(v)) {
+				continue
+			}
+			v.Reset(ssaop.OpPPCFMSUBS)
+			v.AddArg3(x, y, z)
+			return true
+		}
+		break
 	}
 	return false
 }
